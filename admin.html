@@ -1020,15 +1020,17 @@ async function cargarSectores() {
 
 // ── HELPERS ──
 function tab(id, el) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  // Solo las pestañas principales (hijas directas de .container), no las sub-tabs
+  document.querySelectorAll('.container > .tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav > .nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   el.classList.add('active');
 }
 
 function subtab(id, el) {
-  document.querySelectorAll('#t-seguimiento .tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('#t-seguimiento .nav-tab').forEach(t => t.classList.remove('active'));
+  const cont = el.closest('#t-seguimiento');
+  cont.querySelectorAll(':scope > .tab-content').forEach(t => t.classList.remove('active'));
+  el.parentElement.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   el.classList.add('active');
 }
