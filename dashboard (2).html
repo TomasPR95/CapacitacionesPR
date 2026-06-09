@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguimiento de Capacitaciones</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg:       #F5F4F0;
+    --surface:  #FFFFFF;
+    --border:   #E2E0D8;
+    --text:     #1A1A18;
+    --muted:    #7A7870;
+    --accent:   #1B4F8A;
+    --accent-l: #E8EEF7;
+    --success:  #1A6B3C;
+    --success-l:#E6F4EC;
+    --warning:  #92400E;
+    --warning-l:#FEF3C7;
+    --danger:   #A32D2D;
+    --danger-l: #FCEAEA;
+    --radius:   12px;
+    --radius-sm:8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; font-size: 15px;
+  }
+
+  .page { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px;
+  }
+  .header h1 { font-size: 20px; font-weight: 600; }
+  .header-actions { display: flex; gap: 8px; }
+
+  /* ── FILTROS ── */
+  .filters {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.25rem;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+    margin-bottom: 1.25rem;
+  }
+  .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 130px; flex: 1; }
+  .filter-group label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  input[type="date"], select {
+    padding: 8px 10px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 14px; color: var(--text);
+    background: var(--surface); appearance: none; width: 100%;
+  }
+  input[type="date"]:focus, select:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(27,79,138,.1);
+  }
+
+  /* ── BOTONES ── */
+  button {
+    font-size: 13px; font-weight: 500; border-radius: var(--radius-sm);
+    padding: 9px 16px; cursor: pointer; border: 1.5px solid transparent;
+    transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: #163F72; }
+  .btn-outline { background: transparent; color: var(--text); border-color: var(--border); }
+  .btn-outline:hover { background: var(--bg); }
+  .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+  .btn-success:hover { background: #155531; }
+
+  /* ── MÉTRICAS ── */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.25rem; }
+  .metric {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.25rem;
+  }
+  .metric-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+  .metric-value { font-size: 26px; font-weight: 600; }
+  .metric-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+  .tab {
+    padding: 9px 16px; font-size: 13px; font-weight: 500;
+    border: none; background: transparent; color: var(--muted);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    cursor: pointer; border-radius: 0; transition: all .15s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--border);
+    flex-wrap: wrap; gap: 8px;
+  }
+  .card-header h2 { font-size: 14px; font-weight: 600; }
+
+  /* ── TABLA ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: #FAFAF8; }
+  th {
+    text-align: left; padding: 10px 14px; color: var(--muted);
+    font-weight: 500; border-bottom: 1px solid var(--border);
+    white-space: nowrap; cursor: pointer; user-select: none;
+  }
+  th:hover { color: var(--accent); }
+  th .sort-icon { margin-left: 4px; opacity: 0.5; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FAFAF8; }
+
+  /* ── BADGE ── */
+  .badge {
+    font-size: 11px; font-weight: 500; padding: 2px 8px;
+    border-radius: 99px; white-space: nowrap;
+  }
+  .badge-success { background: var(--success-l); color: var(--success); }
+  .badge-warning { background: var(--warning-l); color: var(--warning); }
+  .badge-danger  { background: var(--danger-l);  color: var(--danger);  }
+
+  /* ── BARRA DE PROGRESO ── */
+  .prog-wrap { display: flex; align-items: center; gap: 8px; }
+  .prog-bar { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; min-width: 60px; }
+  .prog-fill { height: 100%; border-radius: 99px; background: var(--accent); transition: width .3s; }
+  .prog-fill.high { background: var(--success); }
+  .prog-fill.low  { background: var(--danger); }
+  .prog-pct { font-size: 12px; color: var(--muted); min-width: 30px; text-align: right; }
+
+  /* ── AUSENTES ── */
+  .ausente-row td { color: var(--danger); }
+
+  /* ── MATRIZ ── */
+  .matriz-wrap { overflow-x: auto; }
+  .matriz-table th, .matriz-table td {
+    padding: 7px 10px; font-size: 12px; text-align: center;
+    border: 1px solid var(--border);
+  }
+  .matriz-table th:first-child, .matriz-table td:first-child {
+    text-align: left; font-weight: 500; white-space: nowrap; min-width: 140px;
+  }
+  .check-cell { font-size: 14px; }
+  .check-yes { color: var(--success); }
+  .check-no  { color: #E2E0D8; }
+
+  /* ── EMPTY ── */
+  .empty { text-align: center; padding: 2.5rem; color: var(--muted); font-size: 14px; }
+
+  /* ── LOADING ── */
+  .loading { text-align: center; padding: 2rem; color: var(--muted); font-size: 13px; }
+
+  /* ── SEARCH INLINE ── */
+  .search-input {
+    padding: 7px 10px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 13px;
+    width: 200px; color: var(--text); background: var(--surface);
+  }
+  .search-input:focus { outline: none; border-color: var(--accent); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: #fff; padding: 10px 20px;
+    border-radius: var(--radius-sm); font-size: 13px;
+    opacity: 0; transition: opacity .25s; z-index: 999;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 600px) {
+    .metrics { grid-template-columns: 1fr 1fr; }
+    .search-input { width: 100%; }
+    .header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <h1>📊 Seguimiento de capacitaciones</h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn-outline" onclick="window.location.href='index.html'">← App de firma</button>
+      <button class="btn-success" onclick="exportarExcel()">⬇ Exportar Excel</button>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filters">
+    <div class="filter-group">
+      <label>Desde</label>
+      <input type="date" id="f-desde">
+    </div>
+    <div class="filter-group">
+      <label>Hasta</label>
+      <input type="date" id="f-hasta">
+    </div>
+    <div class="filter-group">
+      <label>Sector</label>
+      <select id="f-sector">
+        <option value="">Todos los sectores</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Tipo de capacitación</label>
+      <select id="f-tipo">
+        <option value="">Todos los tipos</option>
+        <option>BPM</option><option>Seguridad</option>
+        <option>Calidad</option><option>Ambiental</option><option>Otro</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="cargarDatos()">Aplicar</button>
+  </div>
+
+  <!-- MÉTRICAS -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Sesiones realizadas</div>
+      <div class="metric-value" id="m-sesiones">—</div>
+      <div class="metric-sub" id="m-sesiones-sub"></div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Total de asistencias</div>
+      <div class="metric-value" id="m-asistencias">—</div>
+      <div class="metric-sub" id="m-asist-sub"></div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Personas capacitadas</div>
+      <div class="metric-value" id="m-personas">—</div>
+      <div class="metric-sub" id="m-personas-sub"></div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Horas de capacitación</div>
+      <div class="metric-value" id="m-horas">—</div>
+      <div class="metric-sub" id="m-horas-sub"></div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="cambiarTab('tab-personas', this)">Por persona</button>
+    <button class="tab" onclick="cambiarTab('tab-cursos', this)">Por curso</button>
+    <button class="tab" onclick="cambiarTab('tab-matriz', this)">Matriz completa</button>
+    <button class="tab" onclick="cambiarTab('tab-ausentes', this)">Faltantes</button>
+  </div>
+
+  <!-- TAB: POR PERSONA -->
+  <div class="tab-content active" id="tab-personas">
+    <div class="card">
+      <div class="card-header">
+        <h2>Capacitaciones por persona</h2>
+        <input class="search-input" type="text" placeholder="Buscar persona…"
+               oninput="filtrarTabla('tbl-personas', this.value, [0,1])">
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-personas">
+          <thead>
+            <tr>
+              <th onclick="sortTable('tbl-personas',0)">Legajo <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('tbl-personas',1)">Nombre <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('tbl-personas',2)">Sector</th>
+              <th onclick="sortTable('tbl-personas',3)">Capacitaciones <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('tbl-personas',4)">Horas totales <span class="sort-icon">↕</span></th>
+              <th>Última capacitación</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="6" class="loading">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: POR CURSO -->
+  <div class="tab-content" id="tab-cursos">
+    <div class="card">
+      <div class="card-header">
+        <h2>Asistencia por capacitación</h2>
+        <input class="search-input" type="text" placeholder="Buscar curso…"
+               oninput="filtrarTabla('tbl-cursos', this.value, [0])">
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-cursos">
+          <thead>
+            <tr>
+              <th onclick="sortTable('tbl-cursos',0)">Capacitación <span class="sort-icon">↕</span></th>
+              <th>Tipo</th>
+              <th onclick="sortTable('tbl-cursos',2)">Sesiones <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('tbl-cursos',3)">Asistentes <span class="sort-icon">↕</span></th>
+              <th>Cobertura por sector</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="5" class="loading">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: MATRIZ -->
+  <div class="tab-content" id="tab-matriz">
+    <div class="card">
+      <div class="card-header">
+        <h2>Matriz persona × capacitación</h2>
+        <span style="font-size:12px;color:var(--muted);">✓ = realizó · — = no realizó</span>
+      </div>
+      <div class="matriz-wrap" id="matriz-container">
+        <div class="loading">Cargando…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: FALTANTES -->
+  <div class="tab-content" id="tab-ausentes">
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-header">
+        <h2>Personas que NO hicieron un curso</h2>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="f-curso-ausente" style="font-size:13px;padding:6px 10px;width:auto;">
+            <option value="">Seleccioná una capacitación…</option>
+          </select>
+          <button class="btn-primary" onclick="cargarAusentes()">Ver faltantes</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-ausentes">
+          <thead>
+            <tr><th>Legajo</th><th>Nombre</th><th>Sector</th><th>Turno</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="4" class="empty">Seleccioná una capacitación para ver quién falta.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────
+const SUPABASE_URL = 'https://ceraudgtpjuzdaxleema.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNlcmF1ZGd0cGp1emRheGxlZW1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjQ1NDMsImV4cCI6MjA5NjYwMDU0M30.BxmEpt3NTlfavLQLBtDF2D41cxNJv_ZfnNmtPNsjg3c';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ─────────────────────────────────────────
+//  ESTADO
+// ─────────────────────────────────────────
+let datosGlobales = { sesiones: [], asistencias: [], empleados: [], capacitaciones: [] };
+let sortState = {};
+
+// ─────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  // Fechas por defecto: año en curso
+  const hoy = new Date();
+  document.getElementById('f-desde').value = `${hoy.getFullYear()}-01-01`;
+  document.getElementById('f-hasta').value = hoy.toISOString().slice(0,10);
+
+  await cargarSectores();
+  await cargarCapacitacionesFiltro();
+  await cargarDatos();
+});
+
+async function cargarSectores() {
+  const { data } = await supabase.from('empleados').select('sector').eq('activo', true);
+  const sectores = [...new Set((data || []).map(e => e.sector).filter(Boolean))].sort();
+  const sel = document.getElementById('f-sector');
+  sectores.forEach(s => {
+    const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o);
+  });
+}
+
+async function cargarCapacitacionesFiltro() {
+  const { data } = await supabase.from('capacitaciones').select('id, titulo').eq('activa', true).order('titulo');
+  const sel = document.getElementById('f-curso-ausente');
+  (data || []).forEach(c => {
+    const o = document.createElement('option'); o.value = c.id; o.textContent = c.titulo; sel.appendChild(o);
+  });
+}
+
+// ─────────────────────────────────────────
+//  CARGA PRINCIPAL
+// ─────────────────────────────────────────
+async function cargarDatos() {
+  const desde  = document.getElementById('f-desde').value;
+  const hasta  = document.getElementById('f-hasta').value;
+  const sector = document.getElementById('f-sector').value;
+  const tipo   = document.getElementById('f-tipo').value;
+
+  if (!desde || !hasta) { showToast('Seleccioná un rango de fechas.'); return; }
+
+  // Sesiones en el período
+  let qSes = supabase.from('sesiones')
+    .select('*, capacitaciones(id, titulo, tipo, duracion_horas)')
+    .eq('estado', 'cerrada')
+    .gte('fecha', desde).lte('fecha', hasta);
+  if (tipo) qSes = qSes.eq('capacitaciones.tipo', tipo);
+  const { data: sesiones } = await qSes;
+
+  const sesIds = (sesiones || []).map(s => s.id);
+
+  // Asistencias de esas sesiones
+  let qAsi = supabase.from('asistencias')
+    .select('*, empleados(id, legajo, nombre, sector, turno)')
+    .eq('anulada', false);
+  if (sesIds.length) qAsi = qAsi.in('sesion_id', sesIds);
+  else { resetearVistas(); return; }
+  const { data: asistencias } = await qAsi;
+
+  // Empleados activos
+  let qEmp = supabase.from('empleados').select('*').eq('activo', true);
+  if (sector) qEmp = qEmp.eq('sector', sector);
+  const { data: empleados } = await qEmp;
+
+  datosGlobales = { sesiones: sesiones || [], asistencias: asistencias || [], empleados: empleados || [] };
+
+  renderMetricas();
+  renderPorPersona(sector);
+  renderPorCurso();
+  renderMatriz(sector);
+}
+
+// ─────────────────────────────────────────
+//  MÉTRICAS
+// ─────────────────────────────────────────
+function renderMetricas() {
+  const { sesiones, asistencias, empleados } = datosGlobales;
+
+  const totalSes = sesiones.length;
+  const totalAsi = asistencias.length;
+  const personasUnicas = new Set(asistencias.map(a => a.empleado_id)).size;
+  const horas = sesiones.reduce((acc, s) => acc + (s.capacitaciones?.duracion_horas || 0), 0);
+
+  document.getElementById('m-sesiones').textContent    = totalSes;
+  document.getElementById('m-asistencias').textContent = totalAsi;
+  document.getElementById('m-personas').textContent    = personasUnicas;
+  document.getElementById('m-horas').textContent       = horas.toFixed(1);
+
+  const desde = document.getElementById('f-desde').value;
+  const hasta = document.getElementById('f-hasta').value;
+  const subPeriodo = `${formatFecha(desde)} – ${formatFecha(hasta)}`;
+  document.getElementById('m-sesiones-sub').textContent   = subPeriodo;
+  document.getElementById('m-asist-sub').textContent      = `${asistencias.filter(a=>!a.anulada).length} registros válidos`;
+  document.getElementById('m-personas-sub').textContent   = `de ${empleados.length} activos`;
+  document.getElementById('m-horas-sub').textContent      = `${(horas / (totalSes || 1)).toFixed(1)} hs promedio/sesión`;
+}
+
+// ─────────────────────────────────────────
+//  POR PERSONA
+// ─────────────────────────────────────────
+function renderPorPersona(sectorFiltro) {
+  const { asistencias, empleados, sesiones } = datosGlobales;
+  const emps = sectorFiltro ? empleados.filter(e => e.sector === sectorFiltro) : empleados;
+
+  const rows = emps.map(emp => {
+    const asiEmp = asistencias.filter(a => a.empleado_id === emp.id);
+    const sesUnicas = [...new Set(asiEmp.map(a => a.sesion_id))];
+    const horas = sesUnicas.reduce((acc, sid) => {
+      const ses = sesiones.find(s => s.id === sid);
+      return acc + (ses?.capacitaciones?.duracion_horas || 0);
+    }, 0);
+    const ultima = asiEmp.sort((a,b) => b.firmado_at > a.firmado_at ? 1 : -1)[0];
+    const ultimaFecha = ultima
+      ? formatFecha(new Date(ultima.firmado_at).toISOString().slice(0,10))
+      : '—';
+    return { emp, count: sesUnicas.length, horas, ultimaFecha };
+  });
+
+  const tbody = document.querySelector('#tbl-personas tbody');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Sin datos para el período.</td></tr>'; return; }
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.emp.legajo}</td>
+      <td style="font-weight:500;">${r.emp.nombre}</td>
+      <td>${r.emp.sector || '—'}</td>
+      <td>
+        <div class="prog-wrap">
+          <div class="prog-bar"><div class="prog-fill ${r.count > 3 ? 'high' : r.count === 0 ? 'low' : ''}" style="width:${Math.min(r.count * 20, 100)}%"></div></div>
+          <span style="font-size:13px;font-weight:500;min-width:16px;">${r.count}</span>
+        </div>
+      </td>
+      <td>${r.horas.toFixed(1)} hs</td>
+      <td style="color:var(--muted);">${r.ultimaFecha}</td>
+    </tr>`).join('');
+}
+
+// ─────────────────────────────────────────
+//  POR CURSO
+// ─────────────────────────────────────────
+function renderPorCurso() {
+  const { sesiones, asistencias, empleados } = datosGlobales;
+  const capsMap = {};
+  sesiones.forEach(s => {
+    const cid = s.capacitaciones?.id;
+    if (!cid) return;
+    if (!capsMap[cid]) capsMap[cid] = { titulo: s.capacitaciones.titulo, tipo: s.capacitaciones.tipo, sesIds: new Set(), asiIds: new Set(), sectores: {} };
+    capsMap[cid].sesIds.add(s.id);
+  });
+  asistencias.forEach(a => {
+    const ses = sesiones.find(s => s.id === a.sesion_id);
+    const cid = ses?.capacitaciones?.id;
+    if (!cid || !capsMap[cid]) return;
+    capsMap[cid].asiIds.add(a.empleado_id);
+    const sector = a.empleados?.sector || 'Sin sector';
+    capsMap[cid].sectores[sector] = (capsMap[cid].sectores[sector] || 0) + 1;
+  });
+
+  const rows = Object.values(capsMap).sort((a,b) => b.asiIds.size - a.asiIds.size);
+  const tbody = document.querySelector('#tbl-cursos tbody');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Sin datos.</td></tr>'; return; }
+
+  tbody.innerHTML = rows.map(r => {
+    const sectoresTxt = Object.entries(r.sectores)
+      .sort((a,b) => b[1]-a[1]).slice(0,3)
+      .map(([s,n]) => `<span class="badge badge-success" style="margin:1px;">${s}: ${n}</span>`).join(' ');
+    return `<tr>
+      <td style="font-weight:500;">${r.titulo}</td>
+      <td><span class="badge badge-warning">${r.tipo || '—'}</span></td>
+      <td>${r.sesIds.size}</td>
+      <td>${r.asiIds.size}</td>
+      <td>${sectoresTxt || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────
+//  MATRIZ
+// ─────────────────────────────────────────
+function renderMatriz(sectorFiltro) {
+  const { sesiones, asistencias, empleados } = datosGlobales;
+
+  // Capacitaciones únicas
+  const capsMap = {};
+  sesiones.forEach(s => {
+    const cid = s.capacitaciones?.id;
+    if (cid && !capsMap[cid]) capsMap[cid] = s.capacitaciones.titulo;
+  });
+  const caps = Object.entries(capsMap);
+
+  // Empleados con asistencias
+  const emps = sectorFiltro ? empleados.filter(e => e.sector === sectorFiltro) : empleados;
+  const asiSet = {};
+  asistencias.forEach(a => {
+    const ses = sesiones.find(s => s.id === a.sesion_id);
+    const cid = ses?.capacitaciones?.id;
+    if (!cid) return;
+    const key = `${a.empleado_id}_${cid}`;
+    asiSet[key] = true;
+  });
+
+  const container = document.getElementById('matriz-container');
+  if (!caps.length || !emps.length) {
+    container.innerHTML = '<div class="empty">Sin datos para mostrar.</div>'; return;
+  }
+
+  const colores = ['#E8EEF7','#E6F4EC','#FEF3C7','#FCE7F3','#F0FDF4'];
+
+  let html = '<table class="matriz-table"><thead><tr><th>Persona</th>';
+  caps.forEach(([,titulo], i) => {
+    const maxLen = 16;
+    const label = titulo.length > maxLen ? titulo.slice(0, maxLen) + '…' : titulo;
+    html += `<th style="max-width:80px;font-size:11px;" title="${titulo}">${label}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  emps.forEach(emp => {
+    const total = caps.filter(([cid]) => asiSet[`${emp.id}_${cid}`]).length;
+    const pct = caps.length > 0 ? Math.round(total / caps.length * 100) : 0;
+    html += `<tr><td>
+      <div style="font-weight:500;font-size:12px;">${emp.nombre}</div>
+      <div style="font-size:11px;color:var(--muted);">${emp.sector||'—'} · ${pct}%</div>
+    </td>`;
+    caps.forEach(([cid]) => {
+      const hizo = asiSet[`${emp.id}_${cid}`];
+      html += `<td class="check-cell"><span class="${hizo ? 'check-yes' : 'check-no'}">${hizo ? '✓' : '—'}</span></td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ─────────────────────────────────────────
+//  FALTANTES
+// ─────────────────────────────────────────
+async function cargarAusentes() {
+  const cursoId = document.getElementById('f-curso-ausente').value;
+  if (!cursoId) { showToast('Seleccioná una capacitación.'); return; }
+
+  const desde = document.getElementById('f-desde').value;
+  const hasta = document.getElementById('f-hasta').value;
+
+  // Sesiones del curso en el período
+  const { data: sesiones } = await supabase.from('sesiones')
+    .select('id').eq('capacitacion_id', cursoId).eq('estado', 'cerrada')
+    .gte('fecha', desde).lte('fecha', hasta);
+
+  const sesIds = (sesiones || []).map(s => s.id);
+
+  // Personas que SÍ asistieron
+  let asistieronIds = new Set();
+  if (sesIds.length) {
+    const { data: asi } = await supabase.from('asistencias')
+      .select('empleado_id').in('sesion_id', sesIds).eq('anulada', false);
+    asistieronIds = new Set((asi || []).map(a => a.empleado_id));
+  }
+
+  // Todos los empleados activos
+  const sector = document.getElementById('f-sector').value;
+  let qEmp = supabase.from('empleados').select('*').eq('activo', true).order('nombre');
+  if (sector) qEmp = qEmp.eq('sector', sector);
+  const { data: todos } = await qEmp;
+
+  const ausentes = (todos || []).filter(e => !asistieronIds.has(e.id));
+  const tbody = document.querySelector('#tbl-ausentes tbody');
+
+  if (!ausentes.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="empty" style="color:var(--success);">✓ Todos asistieron en el período.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = ausentes.map(e => `
+    <tr class="ausente-row">
+      <td>${e.legajo}</td>
+      <td style="font-weight:500;">${e.nombre}</td>
+      <td>${e.sector||'—'}</td>
+      <td>${e.turno||'—'}</td>
+    </tr>`).join('');
+}
+
+// ─────────────────────────────────────────
+//  EXPORTAR EXCEL
+// ─────────────────────────────────────────
+function exportarExcel() {
+  const { sesiones, asistencias, empleados } = datosGlobales;
+  if (!asistencias.length) { showToast('No hay datos para exportar.'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  // Hoja 1: Detalle de asistencias
+  const detalleRows = [['Fecha', 'Capacitación', 'Tipo', 'Legajo', 'Nombre', 'Sector', 'Turno', 'Hora firma', 'Instructor']];
+  asistencias.forEach(a => {
+    const ses = sesiones.find(s => s.id === a.sesion_id);
+    detalleRows.push([
+      formatFecha(ses?.fecha || ''),
+      ses?.capacitaciones?.titulo || '—',
+      ses?.capacitaciones?.tipo || '—',
+      a.empleados?.legajo || '—',
+      a.empleados?.nombre || '—',
+      a.empleados?.sector || '—',
+      a.empleados?.turno || '—',
+      a.firmado_at ? new Date(a.firmado_at).toLocaleString('es-AR') : '—',
+      ses?.instructor || '—'
+    ]);
+  });
+  const ws1 = XLSX.utils.aoa_to_sheet(detalleRows);
+  XLSX.utils.book_append_sheet(wb, ws1, 'Detalle');
+
+  // Hoja 2: Resumen por persona
+  const resumenRows = [['Legajo', 'Nombre', 'Sector', 'Turno', 'Capacitaciones', 'Horas totales', 'Última capacitación']];
+  empleados.forEach(emp => {
+    const asiEmp = asistencias.filter(a => a.empleado_id === emp.id);
+    const sesUnicas = [...new Set(asiEmp.map(a => a.sesion_id))];
+    const horas = sesUnicas.reduce((acc, sid) => {
+      const ses = sesiones.find(s => s.id === sid);
+      return acc + (ses?.capacitaciones?.duracion_horas || 0);
+    }, 0);
+    const ultima = asiEmp.sort((a,b) => b.firmado_at > a.firmado_at ? 1 : -1)[0];
+    resumenRows.push([
+      emp.legajo, emp.nombre, emp.sector||'', emp.turno||'',
+      sesUnicas.length, horas,
+      ultima ? formatFecha(new Date(ultima.firmado_at).toISOString().slice(0,10)) : ''
+    ]);
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet(resumenRows);
+  XLSX.utils.book_append_sheet(wb, ws2, 'Por persona');
+
+  // Hoja 3: Matriz
+  const capsMap = {};
+  sesiones.forEach(s => {
+    if (s.capacitaciones?.id) capsMap[s.capacitaciones.id] = s.capacitaciones.titulo;
+  });
+  const caps = Object.entries(capsMap);
+  const matrizRows = [['Legajo', 'Nombre', 'Sector', ...caps.map(([,t]) => t)]];
+  const asiSet = {};
+  asistencias.forEach(a => {
+    const ses = sesiones.find(s => s.id === a.sesion_id);
+    if (ses?.capacitaciones?.id) asiSet[`${a.empleado_id}_${ses.capacitaciones.id}`] = true;
+  });
+  empleados.forEach(emp => {
+    matrizRows.push([
+      emp.legajo, emp.nombre, emp.sector||'',
+      ...caps.map(([cid]) => asiSet[`${emp.id}_${cid}`] ? 'Sí' : '')
+    ]);
+  });
+  const ws3 = XLSX.utils.aoa_to_sheet(matrizRows);
+  XLSX.utils.book_append_sheet(wb, ws3, 'Matriz');
+
+  const desde = document.getElementById('f-desde').value;
+  const hasta = document.getElementById('f-hasta').value;
+  XLSX.writeFile(wb, `Capacitaciones_${desde}_${hasta}.xlsx`);
+  showToast('Excel generado ✓');
+}
+
+// ─────────────────────────────────────────
+//  TABLA HELPERS
+// ─────────────────────────────────────────
+function filtrarTabla(tableId, q, cols) {
+  const tbody = document.querySelector(`#${tableId} tbody`);
+  const rows = tbody.querySelectorAll('tr');
+  rows.forEach(row => {
+    const tds = row.querySelectorAll('td');
+    const match = cols.some(ci => tds[ci]?.textContent.toLowerCase().includes(q.toLowerCase()));
+    row.style.display = match ? '' : 'none';
+  });
+}
+
+function sortTable(tableId, col) {
+  const table = document.getElementById(tableId);
+  const tbody = table.querySelector('tbody');
+  const rows = [...tbody.querySelectorAll('tr')];
+  const key = `${tableId}_${col}`;
+  const asc = sortState[key] !== true;
+  sortState[key] = asc;
+
+  rows.sort((a, b) => {
+    const va = a.querySelectorAll('td')[col]?.textContent.trim() || '';
+    const vb = b.querySelectorAll('td')[col]?.textContent.trim() || '';
+    const na = parseFloat(va); const nb = parseFloat(vb);
+    if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+    return asc ? va.localeCompare(vb, 'es') : vb.localeCompare(va, 'es');
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// ─────────────────────────────────────────
+//  TABS
+// ─────────────────────────────────────────
+function cambiarTab(id, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+function resetearVistas() {
+  ['m-sesiones','m-asistencias','m-personas','m-horas'].forEach(id => {
+    document.getElementById(id).textContent = '0';
+  });
+  ['tbl-personas','tbl-cursos'].forEach(id => {
+    document.querySelector(`#${id} tbody`).innerHTML =
+      '<tr><td colspan="6" class="empty">Sin datos para el período seleccionado.</td></tr>';
+  });
+  document.getElementById('matriz-container').innerHTML = '<div class="empty">Sin datos.</div>';
+}
+
+// ─────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────
+function formatFecha(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.slice(0,10).split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
