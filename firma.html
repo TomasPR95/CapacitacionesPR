@@ -112,7 +112,7 @@ body {
   background: #fafafa; position: relative;
   margin-bottom: 8px; overflow: hidden;
 }
-#sigCanvas { display: block; width: 100%; touch-action: none; }
+#sigCanvas { display: block; width: 100%; height: 170px; touch-action: none; }
 .sig-hint {
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
@@ -322,7 +322,7 @@ body {
     <div id="cierre-p2" style="display:none;">
       <p style="margin-bottom:8px;">Firma del instructor</p>
       <div class="sig-container" style="margin-bottom:12px;">
-        <canvas id="sigInstructor" height="120"></canvas>
+        <canvas id="sigInstructor" style="display:block;width:100%;height:120px;touch-action:none;"></canvas>
         <div class="sig-hint" id="sig-inst-hint">Firmá aquí</div>
       </div>
       <div class="btn-row-2">
@@ -422,10 +422,7 @@ async function abrirSesion() {
 
 function iniciarPad() {
   const canvas = document.getElementById('sigCanvas');
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * window.devicePixelRatio;
-  canvas.height = rect.height * window.devicePixelRatio;
-  canvas.getContext('2d').scale(window.devicePixelRatio, window.devicePixelRatio);
+  resizeCanvas(canvas);
   pad = new SignaturePad(canvas, { minWidth: 1.5, maxWidth: 3, penColor: '#111' });
   pad.addEventListener('beginStroke', () => {
     document.getElementById('sig-hint').style.display = 'none';
@@ -542,10 +539,7 @@ function validarPin() {
   document.getElementById('cierre-p1').style.display = 'none';
   document.getElementById('cierre-p2').style.display = 'block';
   const canvas = document.getElementById('sigInstructor');
-  const rect2 = canvas.getBoundingClientRect();
-  canvas.width = rect2.width * window.devicePixelRatio;
-  canvas.height = rect2.height * window.devicePixelRatio;
-  canvas.getContext('2d').scale(window.devicePixelRatio, window.devicePixelRatio);
+  resizeCanvas(canvas);
   padInst = new SignaturePad(canvas, { minWidth: 1.5, maxWidth: 3, penColor: '#111' });
   padInst.addEventListener('beginStroke', () => {
     document.getElementById('sig-inst-hint').style.display = 'none';
@@ -652,6 +646,13 @@ async function generarPDF(firmaInstructor) {
   doc.text('SHA-256: ' + hash.slice(0, 8) + '...' + hash.slice(-4), 210 - m, y + 10, { align: 'right' });
 
   return doc.output('arraybuffer');
+}
+
+function resizeCanvas(canvas) {
+  const ratio = Math.max(window.devicePixelRatio || 1, 1);
+  canvas.width = canvas.offsetWidth * ratio;
+  canvas.height = canvas.offsetHeight * ratio;
+  canvas.getContext('2d').scale(ratio, ratio);
 }
 
 function iniciales(n) { return n.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase(); }
