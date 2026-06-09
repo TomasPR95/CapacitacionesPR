@@ -372,14 +372,33 @@ tr:hover td { background: #fafeff; }
 
   <!-- ══ TAB: EMPLEADOS ══ -->
   <div class="tab-content" id="t-empleados">
+    <!-- Carga masiva -->
     <div class="card">
-      <div class="card-header"><h2>Agregar empleado</h2></div>
+      <div class="card-header">
+        <h2>Carga masiva desde Excel</h2>
+        <button class="btn btn-outline btn-sm" onclick="descargarPlantilla()">⬇ Descargar plantilla</button>
+      </div>
+      <div class="card-body">
+        <p style="font-size:13px;color:#666;margin-bottom:12px;">
+          Subí un Excel con las columnas: <strong>legajo, nombre, sector, contrato, genero, convenio</strong>.
+          Descargá la plantilla si querés el formato exacto.
+        </p>
+        <input type="file" id="file-masivo" accept=".xlsx,.xls,.csv"
+               style="font-size:13px;margin-bottom:12px;display:block;">
+        <button class="btn btn-success" onclick="procesarMasivo()">Procesar archivo</button>
+        <div id="masivo-resultado" style="margin-top:12px;font-size:13px;"></div>
+      </div>
+    </div>
+
+    <!-- Alta individual -->
+    <div class="card">
+      <div class="card-header"><h2>Agregar empleado individual</h2></div>
       <div class="card-body">
         <div class="form-row">
           <div class="form-group"><label>Legajo *</label><input type="text" id="e-legajo" placeholder="4521"></div>
-          <div class="form-group"><label>Nombre completo *</label><input type="text" id="e-nombre" placeholder="Juan Pérez"></div>
+          <div class="form-group"><label>Nombre y apellido *</label><input type="text" id="e-nombre" placeholder="Juan Pérez"></div>
         </div>
-        <div class="form-row">
+        <div class="form-row-3">
           <div class="form-group">
             <label>Sector</label>
             <select id="e-sector">
@@ -388,25 +407,39 @@ tr:hover td { background: #fafeff; }
             </select>
           </div>
           <div class="form-group">
-            <label>Turno</label>
-            <select id="e-turno">
-              <option>Mañana</option><option>Tarde</option><option>Noche</option>
+            <label>Contrato</label>
+            <select id="e-contrato">
+              <option>Efectivo</option><option>Temporada</option>
+              <option>Eventual</option><option>Agencia</option>
             </select>
           </div>
+          <div class="form-group">
+            <label>Género</label>
+            <select id="e-genero">
+              <option>Femenino</option><option>Masculino</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="max-width:50%;">
+          <label>Convenio</label>
+          <select id="e-convenio">
+            <option>Dentro de convenio</option><option>Fuera de convenio</option>
+          </select>
         </div>
         <button class="btn btn-primary" onclick="agregarEmpleado()">+ Agregar empleado</button>
       </div>
     </div>
 
+    <!-- Tabla -->
     <div class="card">
       <div class="card-header">
-        <h2>Empleados activos</h2>
+        <h2>Empleados activos (<span id="emp-count">0</span>)</h2>
         <input class="search-input" type="text" placeholder="Buscar..." oninput="filtrarTabla('tbl-emp', this.value, [0,1,2])">
       </div>
       <div class="table-wrap">
         <table id="tbl-emp">
-          <thead><tr><th>Legajo</th><th>Nombre</th><th>Sector</th><th>Turno</th><th>Acción</th></tr></thead>
-          <tbody id="body-emp"><tr class="empty-row"><td colspan="5">Cargando...</td></tr></tbody>
+          <thead><tr><th>Legajo</th><th>Nombre</th><th>Sector</th><th>Contrato</th><th>Género</th><th>Convenio</th><th>Acción</th></tr></thead>
+          <tbody id="body-emp"><tr class="empty-row"><td colspan="7">Cargando...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -548,7 +581,7 @@ async function cargarSeguimiento() {
   let asistencias = [];
   if (sesIds.length) {
     const { data } = await sb.from('asistencias')
-      .select('*, empleados(id, legajo, nombre, sector, turno)')
+      .select('*, empleados(id, legajo, nombre, sector, contrato, genero, convenio)')
       .in('sesion_id', sesIds).eq('anulada', false);
     asistencias = data || [];
   }
@@ -686,31 +719,36 @@ async function cargarFaltantes() {
     <td>${e.legajo}</td>
     <td style="font-weight:500;color:#c0392b;">${e.nombre}</td>
     <td>${e.sector||'—'}</td>
-    <td>${e.turno||'—'}</td>
+    <td>${e.contrato||'—'}</td>
   </tr>`).join('');
 }
 
-function exportarExcel() {
-  const { sesiones, asistencias, empleados } = datosGlobales;
-  if (!asistencias.length) { toast('No hay datos para exportar.'); return; }
+async function exportarExcel() {
+  let { sesiones, asistencias, empleados } = datosGlobales;
+  // Si no hay datos cargados, cargarlos primero
+  if (!asistencias.length) {
+    await cargarSeguimiento();
+    ({ sesiones, asistencias, empleados } = datosGlobales);
+  }
+  if (!asistencias.length) { toast('No hay asistencias en el período seleccionado.'); return; }
   const wb = XLSX.utils.book_new();
 
-  const det = [['Fecha','Capacitacion','Tipo','Legajo','Nombre','Sector','Turno','Hora firma','Instructor']];
+  const det = [['Fecha','Capacitacion','Tipo','Legajo','Nombre','Sector','Contrato','Genero','Convenio','Hora firma','Instructor']];
   asistencias.forEach(a => {
     const s = sesiones.find(x => x.id === a.sesion_id);
     det.push([formatFecha(s?.fecha||''), s?.capacitaciones?.titulo||'', s?.capacitaciones?.tipo||'',
-      a.empleados?.legajo||'', a.empleados?.nombre||'', a.empleados?.sector||'', a.empleados?.turno||'',
+      a.empleados?.legajo||'', a.empleados?.nombre||'', a.empleados?.sector||'', a.empleados?.contrato||'', a.empleados?.genero||'', a.empleados?.convenio||'',
       a.firmado_at ? new Date(a.firmado_at).toLocaleString('es-AR') : '', s?.instructor||'']);
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(det), 'Detalle');
 
-  const res = [['Legajo','Nombre','Sector','Turno','Capacitaciones','Horas','Ultima']];
+  const res = [['Legajo','Nombre','Sector','Contrato','Capacitaciones','Horas','Ultima']];
   empleados.forEach(emp => {
     const asiEmp = asistencias.filter(a => a.empleado_id === emp.id);
     const sesU = [...new Set(asiEmp.map(a => a.sesion_id))];
     const horas = sesU.reduce((acc, sid) => { const s = sesiones.find(x => x.id === sid); return acc + (s?.capacitaciones?.duracion_horas||0); }, 0);
     const ultima = asiEmp.sort((a,b) => b.firmado_at > a.firmado_at ? 1 : -1)[0];
-    res.push([emp.legajo, emp.nombre, emp.sector||'', emp.turno||'', sesU.length, horas, ultima ? formatFecha(ultima.firmado_at.slice(0,10)) : '']);
+    res.push([emp.legajo, emp.nombre, emp.sector||'', emp.contrato||'', sesU.length, horas, ultima ? formatFecha(ultima.firmado_at.slice(0,10)) : '']);
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(res), 'Por persona');
 
@@ -733,12 +771,15 @@ function exportarExcel() {
 async function cargarEmpleados() {
   const { data } = await sb.from('empleados').select('*').eq('activo', true).order('nombre');
   const tbody = document.getElementById('body-emp');
-  if (!data || !data.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Sin empleados.</td></tr>'; return; }
+  document.getElementById('emp-count').textContent = data ? data.length : 0;
+  if (!data || !data.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Sin empleados.</td></tr>'; return; }
   tbody.innerHTML = data.map(e => `<tr>
     <td>${e.legajo}</td>
     <td style="font-weight:500;">${e.nombre}</td>
     <td>${e.sector||'—'}</td>
-    <td>${e.turno||'—'}</td>
+    <td>${e.contrato||'—'}</td>
+    <td>${e.genero||'—'}</td>
+    <td>${e.convenio||'—'}</td>
     <td><button class="btn btn-outline btn-sm" onclick="darBajaEmp('${e.id}')">Dar de baja</button></td>
   </tr>`).join('');
 
@@ -752,14 +793,84 @@ async function agregarEmpleado() {
   const legajo = document.getElementById('e-legajo').value.trim();
   const nombre = document.getElementById('e-nombre').value.trim();
   const sector = document.getElementById('e-sector').value;
-  const turno = document.getElementById('e-turno').value;
+  const contrato = document.getElementById('e-contrato').value;
+  const genero = document.getElementById('e-genero').value;
+  const convenio = document.getElementById('e-convenio').value;
   if (!legajo || !nombre) { toast('Completá legajo y nombre.'); return; }
-  const { error } = await sb.from('empleados').insert({ legajo, nombre, sector, turno });
+  const { error } = await sb.from('empleados').insert({ legajo, nombre, sector, contrato, genero, convenio });
   if (error) { toast(error.message.includes('unique') ? 'Ese legajo ya existe.' : 'Error al guardar.'); return; }
   document.getElementById('e-legajo').value = '';
   document.getElementById('e-nombre').value = '';
   toast('Empleado agregado.');
   cargarEmpleados();
+}
+
+// ── CARGA MASIVA ──
+function descargarPlantilla() {
+  const rows = [
+    ['legajo', 'nombre', 'sector', 'contrato', 'genero', 'convenio'],
+    ['4521', 'Juan Pérez', 'Envasado', 'Efectivo', 'Masculino', 'Dentro de convenio'],
+    ['4587', 'Ana López', 'Calidad', 'Temporada', 'Femenino', 'Fuera de convenio']
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Empleados');
+  XLSX.writeFile(wb, 'Plantilla_empleados.xlsx');
+}
+
+async function procesarMasivo() {
+  const input = document.getElementById('file-masivo');
+  const res = document.getElementById('masivo-resultado');
+  if (!input.files.length) { toast('Seleccioná un archivo primero.'); return; }
+
+  res.innerHTML = '<span style="color:#888;">Procesando...</span>';
+
+  try {
+    const file = input.files[0];
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+    if (!rows.length) { res.innerHTML = '<span style="color:#c0392b;">El archivo está vacío.</span>'; return; }
+
+    // Normalizar columnas (acepta variaciones de mayúsculas/acentos)
+    const empleados = rows.map(r => {
+      const get = (keys) => {
+        for (const k of Object.keys(r)) {
+          const kn = k.toLowerCase().trim().replace(/é/g,'e').replace(/í/g,'i');
+          if (keys.includes(kn)) return String(r[k]).trim();
+        }
+        return '';
+      };
+      return {
+        legajo: get(['legajo']),
+        nombre: get(['nombre', 'nombre y apellido', 'apellido y nombre']),
+        sector: get(['sector']),
+        contrato: get(['contrato']),
+        genero: get(['genero', 'género', 'sexo']),
+        convenio: get(['convenio'])
+      };
+    }).filter(e => e.legajo && e.nombre);
+
+    if (!empleados.length) {
+      res.innerHTML = '<span style="color:#c0392b;">No se encontraron filas válidas. Revisá que las columnas se llamen legajo y nombre.</span>';
+      return;
+    }
+
+    // Insertar con upsert (actualiza si el legajo ya existe)
+    const { error } = await sb.from('empleados').upsert(empleados, { onConflict: 'legajo' });
+
+    if (error) {
+      res.innerHTML = '<span style="color:#c0392b;">Error: ' + error.message + '</span>';
+      return;
+    }
+
+    res.innerHTML = '<span style="color:#1A6B3C;font-weight:600;">✓ ' + empleados.length + ' empleados cargados correctamente.</span>';
+    input.value = '';
+    cargarEmpleados();
+  } catch (err) {
+    res.innerHTML = '<span style="color:#c0392b;">Error al leer el archivo: ' + err.message + '</span>';
+  }
 }
 
 async function darBajaEmp(id) {
