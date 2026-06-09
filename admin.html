@@ -431,6 +431,7 @@ tr:hover td { background: #fafeff; }
     </div>
 
     <!-- Tabla -->
+    <div id="aviso-pendientes"></div>
     <div class="card">
       <div class="card-header">
         <h2>Empleados activos (<span id="emp-count">0</span>)</h2>
@@ -438,7 +439,7 @@ tr:hover td { background: #fafeff; }
       </div>
       <div class="table-wrap">
         <table id="tbl-emp">
-          <thead><tr><th>Legajo</th><th>Nombre</th><th>Sector</th><th>Contrato</th><th>Género</th><th>Convenio</th><th>Acción</th></tr></thead>
+          <thead><tr><th>DNI/Legajo</th><th>Nombre</th><th>Sector</th><th>Contrato</th><th>Género</th><th>Convenio</th><th>Acción</th></tr></thead>
           <tbody id="body-emp"><tr class="empty-row"><td colspan="7">Cargando...</td></tr></tbody>
         </table>
       </div>
@@ -793,24 +794,43 @@ async function exportarExcel() {
 
 // ── EMPLEADOS ──
 async function cargarEmpleados() {
-  const { data } = await sb.from('empleados').select('*').eq('activo', true).order('nombre');
+  const { data } = await sb.from('empleados').select('*').eq('activo', true).order('auto_agregado', { ascending: false }).order('nombre');
   const tbody = document.getElementById('body-emp');
   document.getElementById('emp-count').textContent = data ? data.length : 0;
   if (!data || !data.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Sin empleados.</td></tr>'; return; }
-  tbody.innerHTML = data.map(e => `<tr>
+
+  // Aviso de pendientes de validar
+  const pendientes = data.filter(e => e.auto_agregado).length;
+  const avisoEl = document.getElementById('aviso-pendientes');
+  if (avisoEl) {
+    avisoEl.innerHTML = pendientes
+      ? '<div style="background:#FEF3C7;color:#92400E;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;">⚠ ' + pendientes + ' empleado(s) se auto-agregaron desde la tablet y están pendientes de validar (completá contrato, género y convenio).</div>'
+      : '';
+  }
+
+  tbody.innerHTML = data.map(e => `<tr ${e.auto_agregado ? 'style="background:#FEFCE8;"' : ''}>
     <td>${e.legajo}</td>
-    <td style="font-weight:500;">${e.nombre}</td>
+    <td style="font-weight:500;">${e.nombre}${e.auto_agregado ? ' <span class="badge badge-yellow">Pendiente</span>' : ''}</td>
     <td>${e.sector||'—'}</td>
     <td>${e.contrato||'—'}</td>
     <td>${e.genero||'—'}</td>
     <td>${e.convenio||'—'}</td>
-    <td><button class="btn btn-outline btn-sm" onclick="darBajaEmp('${e.id}')">Dar de baja</button></td>
+    <td>
+      ${e.auto_agregado ? `<button class="btn btn-success btn-sm" onclick="validarEmp('${e.id}')">Validar</button> ` : ''}
+      <button class="btn btn-outline btn-sm" onclick="darBajaEmp('${e.id}')">Dar de baja</button>
+    </td>
   </tr>`).join('');
 
   const sectores = [...new Set(data.map(e => e.sector).filter(Boolean))].sort();
   const sel = document.getElementById('f-sector');
   sel.innerHTML = '<option value="">Todos</option>';
   sectores.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+}
+
+async function validarEmp(id) {
+  await sb.from('empleados').update({ auto_agregado: false }).eq('id', id);
+  toast('Empleado validado.');
+  cargarEmpleados();
 }
 
 async function agregarEmpleado() {
