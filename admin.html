@@ -192,7 +192,9 @@ tr:hover td { background: #fafeff; }
 
 <div class="nav">
   <div class="nav-tab active" onclick="tab('t-sesiones', this)">Sesiones</div>
+  <div class="nav-tab" onclick="tab('t-avance', this)">Avance del plan</div>
   <div class="nav-tab" onclick="tab('t-seguimiento', this)">Seguimiento</div>
+  <div class="nav-tab" onclick="tab('t-plan', this)">Plan</div>
   <div class="nav-tab" onclick="tab('t-empleados', this)">Empleados</div>
   <div class="nav-tab" onclick="tab('t-cursos', this)">Cursos</div>
 </div>
@@ -253,11 +255,109 @@ tr:hover td { background: #fafeff; }
     </div>
   </div>
 
-  <!-- ══ TAB: SEGUIMIENTO ══ -->
-  <div class="tab-content" id="t-seguimiento">
+  <!-- ══ TAB: AVANCE DEL PLAN ══ -->
+  <div class="tab-content" id="t-avance">
     <div class="filters">
       <div class="filter-group">
-        <label>Desde</label>
+        <label>Período (ciclo jul–jun)</label>
+        <select id="av-periodo"></select>
+      </div>
+      <div class="filter-group">
+        <label>Centro</label>
+        <select id="av-centro">
+          <option value="">Todos los centros</option>
+          <option>Bella Vista</option><option>San Rafael</option><option>Cafayate</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="cargarAvance()">Aplicar</button>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Planificadas</div>
+        <div class="metric-value" id="av-planificadas">—</div>
+        <div class="metric-sub">en el período</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Realizadas</div>
+        <div class="metric-value" id="av-realizadas" style="color:#1A6B3C;">—</div>
+        <div class="metric-sub" id="av-realizadas-sub"></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Pendientes</div>
+        <div class="metric-value" id="av-pendientes" style="color:#c0392b;">—</div>
+        <div class="metric-sub">aún sin dictar</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Avance global</div>
+        <div class="metric-value" id="av-pct">—</div>
+        <div class="metric-sub">del plan cumplido</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Detalle del plan por curso y centro</h2></div>
+      <div class="table-wrap" id="avance-wrap">
+        <div style="text-align:center;padding:30px;color:#bbb;font-size:13px;">Aplicá un filtro para ver el avance.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: PLAN ══ -->
+  <div class="tab-content" id="t-plan">
+    <div class="card">
+      <div class="card-header">
+        <h2>Planificar capacitación</h2>
+      </div>
+      <div class="card-body">
+        <p style="font-size:13px;color:#666;margin-bottom:12px;">
+          Definí en qué mes cada centro tiene que dictar cada curso. El ciclo va de julio a junio del año siguiente.
+        </p>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>Capacitación</label>
+            <select id="pl-curso"><option value="">Seleccioná...</option></select>
+          </div>
+          <div class="form-group">
+            <label>Centro</label>
+            <select id="pl-centro">
+              <option>Bella Vista</option><option>San Rafael</option><option>Cafayate</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Mes</label>
+            <select id="pl-mes">
+              <option value="7">Julio</option><option value="8">Agosto</option>
+              <option value="9">Septiembre</option><option value="10">Octubre</option>
+              <option value="11">Noviembre</option><option value="12">Diciembre</option>
+              <option value="1">Enero</option><option value="2">Febrero</option>
+              <option value="3">Marzo</option><option value="4">Abril</option>
+              <option value="5">Mayo</option><option value="6">Junio</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="max-width:33%;">
+          <label>Período (año de inicio del ciclo)</label>
+          <select id="pl-periodo"></select>
+        </div>
+        <button class="btn btn-primary" onclick="agregarPlan()">+ Agregar al plan</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Plan cargado</h2>
+        <select id="pl-filtro-periodo" onchange="cargarPlan()" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;"></select>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-plan">
+          <thead><tr><th>Código</th><th>Capacitación</th><th>Centro</th><th>Mes</th><th>Acción</th></tr></thead>
+          <tbody id="body-plan"><tr class="empty-row"><td colspan="5">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
         <input type="date" id="f-desde">
       </div>
       <div class="filter-group">
@@ -401,6 +501,12 @@ tr:hover td { background: #fafeff; }
         </div>
         <div class="form-row-3">
           <div class="form-group">
+            <label>Centro productivo</label>
+            <select id="e-centro">
+              <option>Bella Vista</option><option>San Rafael</option><option>Cafayate</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label>Sector</label>
             <select id="e-sector">
               <option>Envasado</option><option>Producción</option><option>Calidad</option>
@@ -414,18 +520,20 @@ tr:hover td { background: #fafeff; }
               <option>Eventual</option><option>Agencia</option>
             </select>
           </div>
+        </div>
+        <div class="form-row">
           <div class="form-group">
             <label>Género</label>
             <select id="e-genero">
               <option>Femenino</option><option>Masculino</option>
             </select>
           </div>
-        </div>
-        <div class="form-group" style="max-width:50%;">
-          <label>Convenio</label>
-          <select id="e-convenio">
-            <option>Dentro de convenio</option><option>Fuera de convenio</option>
-          </select>
+          <div class="form-group">
+            <label>Convenio</label>
+            <select id="e-convenio">
+              <option>Dentro de convenio</option><option>Fuera de convenio</option>
+            </select>
+          </div>
         </div>
         <button class="btn btn-primary" onclick="agregarEmpleado()">+ Agregar empleado</button>
       </div>
@@ -440,8 +548,8 @@ tr:hover td { background: #fafeff; }
       </div>
       <div class="table-wrap">
         <table id="tbl-emp">
-          <thead><tr><th>DNI/Legajo</th><th>Nombre</th><th>Sector</th><th>Contrato</th><th>Género</th><th>Convenio</th><th>Acción</th></tr></thead>
-          <tbody id="body-emp"><tr class="empty-row"><td colspan="7">Cargando...</td></tr></tbody>
+          <thead><tr><th>DNI/Legajo</th><th>Nombre</th><th>Centro</th><th>Sector</th><th>Contrato</th><th>Género</th><th>Convenio</th><th>Acción</th></tr></thead>
+          <tbody id="body-emp"><tr class="empty-row"><td colspan="8">Cargando...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -523,12 +631,43 @@ window.addEventListener('load', () => {
   const hoy = new Date();
   document.getElementById('f-desde').value = hoy.getFullYear() + '-01-01';
   document.getElementById('f-hasta').value = hoy.toISOString().slice(0,10);
+  inicializarPeriodos();
   cargarTodo();
 });
 
 async function cargarTodo() {
-  await Promise.all([cargarSesiones(), cargarEmpleados(), cargarCursos(), cargarSectores(), cargarCursosFiltro()]);
+  await Promise.all([cargarSesiones(), cargarEmpleados(), cargarCursos(), cargarSectores(), cargarCursosFiltro(), cargarPlanCursos(), cargarPlan()]);
 }
+
+// ── PERÍODOS (ciclo julio–junio) ──
+function periodoActual() {
+  // Si estamos en jul-dic, el ciclo arranca este año. Si ene-jun, arrancó el año pasado.
+  const hoy = new Date();
+  return hoy.getMonth() + 1 >= 7 ? hoy.getFullYear() : hoy.getFullYear() - 1;
+}
+
+function nombrePeriodo(p) { return 'Jul ' + p + ' – Jun ' + (p + 1); }
+
+function inicializarPeriodos() {
+  const actual = periodoActual();
+  const opciones = [actual - 1, actual, actual + 1];
+  ['av-periodo', 'pl-periodo', 'pl-filtro-periodo'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '';
+    opciones.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p; o.textContent = nombrePeriodo(p);
+      if (p === actual) o.selected = true;
+      sel.appendChild(o);
+    });
+  });
+}
+
+const MESES = { 1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre' };
+
+// Dado un mes (1-12) y el período, devuelve el año calendario real
+function anioDeMes(mes, periodo) { return mes >= 7 ? periodo : periodo + 1; }
 
 // ── SESIONES ──
 async function cargarSesiones() {
@@ -817,7 +956,7 @@ async function cargarEmpleados() {
   const { data } = await sb.from('empleados').select('*').eq('activo', true).order('auto_agregado', { ascending: false }).order('nombre');
   const tbody = document.getElementById('body-emp');
   document.getElementById('emp-count').textContent = data ? data.length : 0;
-  if (!data || !data.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Sin empleados.</td></tr>'; return; }
+  if (!data || !data.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Sin empleados.</td></tr>'; return; }
 
   // Aviso de pendientes de validar
   const pendientes = data.filter(e => e.auto_agregado).length;
@@ -831,6 +970,7 @@ async function cargarEmpleados() {
   tbody.innerHTML = data.map(e => `<tr ${e.auto_agregado ? 'style="background:#FEFCE8;"' : ''}>
     <td>${e.legajo}</td>
     <td style="font-weight:500;">${e.nombre}${e.auto_agregado ? ' <span class="badge badge-yellow">Pendiente</span>' : ''}</td>
+    <td>${e.centro||'—'}</td>
     <td>${e.sector||'—'}</td>
     <td>${e.contrato||'—'}</td>
     <td>${e.genero||'—'}</td>
@@ -856,12 +996,13 @@ async function validarEmp(id) {
 async function agregarEmpleado() {
   const legajo = document.getElementById('e-legajo').value.trim();
   const nombre = document.getElementById('e-nombre').value.trim();
+  const centro = document.getElementById('e-centro').value;
   const sector = document.getElementById('e-sector').value;
   const contrato = document.getElementById('e-contrato').value;
   const genero = document.getElementById('e-genero').value;
   const convenio = document.getElementById('e-convenio').value;
   if (!legajo || !nombre) { toast('Completá legajo y nombre.'); return; }
-  const { error } = await sb.from('empleados').insert({ legajo, nombre, sector, contrato, genero, convenio });
+  const { error } = await sb.from('empleados').insert({ legajo, nombre, centro, sector, contrato, genero, convenio });
   if (error) { toast(error.message.includes('unique') ? 'Ese legajo ya existe.' : 'Error al guardar.'); return; }
   document.getElementById('e-legajo').value = '';
   document.getElementById('e-nombre').value = '';
@@ -872,9 +1013,9 @@ async function agregarEmpleado() {
 // ── CARGA MASIVA ──
 function descargarPlantilla() {
   const rows = [
-    ['legajo', 'nombre', 'sector', 'contrato', 'genero', 'convenio'],
-    ['4521', 'Juan Pérez', 'Envasado', 'Efectivo', 'Masculino', 'Dentro de convenio'],
-    ['4587', 'Ana López', 'Calidad', 'Temporada', 'Femenino', 'Fuera de convenio']
+    ['legajo', 'nombre', 'centro', 'sector', 'contrato', 'genero', 'convenio'],
+    ['4521', 'Juan Pérez', 'Bella Vista', 'Envasado', 'Efectivo', 'Masculino', 'Dentro de convenio'],
+    ['4587', 'Ana López', 'San Rafael', 'Calidad', 'Temporada', 'Femenino', 'Fuera de convenio']
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Empleados');
@@ -909,6 +1050,7 @@ async function procesarMasivo() {
       return {
         legajo: get(['legajo']),
         nombre: get(['nombre', 'nombre y apellido', 'apellido y nombre']),
+        centro: get(['centro', 'centro productivo', 'planta']),
         sector: get(['sector']),
         contrato: get(['contrato']),
         genero: get(['genero', 'género', 'sexo']),
@@ -983,6 +1125,7 @@ async function agregarCurso() {
   toast('Capacitación agregada.');
   cargarCursos();
   cargarCursosFiltro();
+  cargarPlanCursos();
 }
 
 // ── CARGA MASIVA CURSOS ──
@@ -1038,6 +1181,7 @@ async function procesarMasivoCursos() {
     input.value = '';
     cargarCursos();
     cargarCursosFiltro();
+    cargarPlanCursos();
   } catch (err) {
     res.innerHTML = '<span style="color:#c0392b;">Error al leer el archivo: ' + err.message + '</span>';
   }
@@ -1058,6 +1202,160 @@ async function cargarSectores() {
   sectores.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
 }
 
+// ── PLAN DE CAPACITACIÓN ──
+async function cargarPlanCursos() {
+  const { data } = await sb.from('capacitaciones').select('id, titulo, codigo').eq('activa', true).order('codigo');
+  const sel = document.getElementById('pl-curso');
+  if (sel) {
+    sel.innerHTML = '<option value="">Seleccioná...</option>';
+    (data || []).forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = (c.codigo ? c.codigo + ' · ' : '') + c.titulo; sel.appendChild(o); });
+  }
+}
+
+async function agregarPlan() {
+  const cap = document.getElementById('pl-curso').value;
+  const centro = document.getElementById('pl-centro').value;
+  const mes = parseInt(document.getElementById('pl-mes').value);
+  const periodo = parseInt(document.getElementById('pl-periodo').value);
+  if (!cap) { toast('Seleccioná una capacitación.'); return; }
+
+  const { error } = await sb.from('plan_capacitacion')
+    .upsert({ capacitacion_id: cap, centro, mes, periodo }, { onConflict: 'capacitacion_id,centro,periodo' });
+  if (error) { toast('Error: ' + error.message); return; }
+  toast('Agregado al plan.');
+  cargarPlan();
+}
+
+async function cargarPlan() {
+  const periodo = parseInt(document.getElementById('pl-filtro-periodo').value) || periodoActual();
+  const { data } = await sb.from('plan_capacitacion')
+    .select('*, capacitaciones(titulo, codigo)')
+    .eq('periodo', periodo).order('mes');
+
+  const tbody = document.getElementById('body-plan');
+  if (!data || !data.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Sin planificaciones para este período.</td></tr>'; return; }
+
+  tbody.innerHTML = data.map(p => `<tr>
+    <td><span class="badge badge-gray">${p.capacitaciones?.codigo || '—'}</span></td>
+    <td style="font-weight:500;">${p.capacitaciones?.titulo || '—'}</td>
+    <td>${p.centro}</td>
+    <td>${MESES[p.mes]}</td>
+    <td><button class="btn btn-outline btn-sm" style="color:#c0392b;border-color:#e8c0c0;" onclick="borrarPlan('${p.id}')">Quitar</button></td>
+  </tr>`).join('');
+}
+
+async function borrarPlan(id) {
+  if (!confirm('¿Quitar esta planificación?')) return;
+  await sb.from('plan_capacitacion').delete().eq('id', id);
+  toast('Quitado del plan.');
+  cargarPlan();
+}
+
+// ── AVANCE DEL PLAN ──
+async function cargarAvance() {
+  const periodo = parseInt(document.getElementById('av-periodo').value);
+  const centroFiltro = document.getElementById('av-centro').value;
+
+  // 1. Traer el plan del período
+  let qPlan = sb.from('plan_capacitacion')
+    .select('*, capacitaciones(titulo, codigo)')
+    .eq('periodo', periodo);
+  if (centroFiltro) qPlan = qPlan.eq('centro', centroFiltro);
+  const { data: plan } = await qPlan;
+
+  if (!plan || !plan.length) {
+    document.getElementById('av-planificadas').textContent = '0';
+    document.getElementById('av-realizadas').textContent = '0';
+    document.getElementById('av-pendientes').textContent = '0';
+    document.getElementById('av-pct').textContent = '—';
+    document.getElementById('avance-wrap').innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;font-size:13px;">No hay nada planificado para este período. Cargá el plan en la pestaña Plan.</div>';
+    return;
+  }
+
+  // 2. Traer sesiones cerradas del período (jul del periodo a jun del siguiente)
+  const desde = periodo + '-07-01';
+  const hasta = (periodo + 1) + '-06-30';
+  let qSes = sb.from('sesiones')
+    .select('id, capacitacion_id, centro, fecha')
+    .eq('estado', 'cerrada').gte('fecha', desde).lte('fecha', hasta);
+  const { data: sesiones } = await qSes;
+
+  // 3. Asistencias de esas sesiones
+  const sesIds = (sesiones || []).map(s => s.id);
+  let asistencias = [];
+  if (sesIds.length) {
+    const { data } = await sb.from('asistencias')
+      .select('sesion_id, empleado_id').in('sesion_id', sesIds).eq('anulada', false);
+    asistencias = data || [];
+  }
+
+  // 4. Empleados por centro (para calcular ausentes)
+  const { data: empleados } = await sb.from('empleados').select('id, legajo, nombre, centro, sector').eq('activo', true);
+
+  // 5. Cruzar plan vs realizado
+  let realizadas = 0;
+  const filas = plan.map(p => {
+    // Sesiones que corresponden a este curso+centro
+    const sesDelPlan = (sesiones || []).filter(s =>
+      s.capacitacion_id === p.capacitacion_id && s.centro === p.centro);
+    const dictada = sesDelPlan.length > 0;
+    if (dictada) realizadas++;
+
+    // Asistentes a ese curso en ese centro
+    const sesDelPlanIds = sesDelPlan.map(s => s.id);
+    const asistieron = new Set(asistencias.filter(a => sesDelPlanIds.includes(a.sesion_id)).map(a => a.empleado_id));
+
+    // Personal del centro
+    const personalCentro = empleados.filter(e => e.centro === p.centro);
+    const ausentes = personalCentro.filter(e => !asistieron.has(e.id));
+
+    return { plan: p, dictada, sesiones: sesDelPlan, asistieron: asistieron.size, totalCentro: personalCentro.length, ausentes };
+  });
+
+  const planificadas = plan.length;
+  const pendientes = planificadas - realizadas;
+  const pct = planificadas ? Math.round(realizadas / planificadas * 100) : 0;
+
+  document.getElementById('av-planificadas').textContent = planificadas;
+  document.getElementById('av-realizadas').textContent = realizadas;
+  document.getElementById('av-realizadas-sub').textContent = pct + '% del plan';
+  document.getElementById('av-pendientes').textContent = pendientes;
+  document.getElementById('av-pct').textContent = pct + '%';
+
+  // Tabla detalle
+  const wrap = document.getElementById('avance-wrap');
+  let html = '<table><thead><tr><th>Código</th><th>Capacitación</th><th>Centro</th><th>Mes plan</th><th>Estado</th><th>Asistieron</th><th>Ausentes</th></tr></thead><tbody>';
+  filas.sort((a,b) => a.plan.mes - b.plan.mes).forEach(f => {
+    const estado = f.dictada
+      ? '<span class="badge badge-green">Dictada</span>'
+      : '<span class="badge badge-yellow">Pendiente</span>';
+    const ausentesTxt = f.dictada && f.ausentes.length
+      ? `<a href="#" style="color:#c0392b;" onclick="verAusentes('${f.plan.capacitacion_id}','${f.plan.centro}',${periodo});return false;">${f.ausentes.length} ausente(s)</a>`
+      : (f.dictada ? '<span style="color:#1A6B3C;">Todos</span>' : '—');
+    html += `<tr>
+      <td><span class="badge badge-gray">${f.plan.capacitaciones?.codigo || '—'}</span></td>
+      <td style="font-weight:500;">${f.plan.capacitaciones?.titulo || '—'}</td>
+      <td>${f.plan.centro}</td>
+      <td>${MESES[f.plan.mes]}</td>
+      <td>${estado}</td>
+      <td>${f.dictada ? f.asistieron + '/' + f.totalCentro : '—'}</td>
+      <td>${ausentesTxt}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+
+  // Guardar para el detalle de ausentes
+  window._avanceFilas = filas;
+}
+
+function verAusentes(capId, centro, periodo) {
+  const f = (window._avanceFilas || []).find(x => x.plan.capacitacion_id === capId && x.plan.centro === centro);
+  if (!f || !f.ausentes.length) { toast('Sin ausentes.'); return; }
+  const lista = f.ausentes.map(e => '• ' + e.nombre + ' (' + (e.sector || 's/sector') + ')').join('\n');
+  alert('Ausentes en ' + (f.plan.capacitaciones?.titulo || '') + ' — ' + centro + ':\n\n' + lista);
+}
+
 // ── HELPERS ──
 function tab(id, el) {
   // Solo las pestañas principales (hijas directas de .container), no las sub-tabs
@@ -1065,6 +1363,7 @@ function tab(id, el) {
   document.querySelectorAll('.nav > .nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   el.classList.add('active');
+  if (id === 't-avance') cargarAvance();
 }
 
 function subtab(id, el) {
