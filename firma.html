@@ -257,10 +257,46 @@ body {
 <div id="p-buscar" class="container pb" style="display:none;">
   <div class="search-box">
     <span>🔍</span>
-    <input type="text" id="inp-buscar" placeholder="Buscar por nombre o legajo..."
+    <input type="text" id="inp-buscar" placeholder="Buscar por nombre o DNI..."
            oninput="filtrar()" autocomplete="off">
   </div>
   <div class="emp-list" id="lista-emp"></div>
+
+  <button class="btn btn-outline" style="margin-top:14px;" onclick="abrirAutoAgregar()">
+    No estoy en la lista
+  </button>
+</div>
+
+<!-- ══ PANTALLA: AUTO-AGREGAR ══ -->
+<div id="p-autoagregar" class="container pb" style="display:none;">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+    <button class="btn btn-outline" style="width:auto;padding:8px 14px;" onclick="mostrar('p-buscar')">← Volver</button>
+    <h2 style="font-size:17px;font-weight:700;">Agregarme a la lista</h2>
+  </div>
+  <div class="card">
+    <p style="font-size:13px;color:#666;margin-bottom:16px;">
+      Completá tus datos para firmar. RRHH va a validar la información después.
+    </p>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label style="font-size:13px;color:#555;font-weight:500;display:block;margin-bottom:5px;">DNI *</label>
+      <input type="text" id="aa-dni" placeholder="Sin puntos" inputmode="numeric"
+             style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;">
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label style="font-size:13px;color:#555;font-weight:500;display:block;margin-bottom:5px;">Nombre y apellido *</label>
+      <input type="text" id="aa-nombre" placeholder="Tu nombre completo"
+             style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;">
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label style="font-size:13px;color:#555;font-weight:500;display:block;margin-bottom:5px;">Sector *</label>
+      <select id="aa-sector" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:white;">
+        <option value="">Seleccioná tu sector...</option>
+        <option>Envasado</option><option>Producción</option><option>Calidad</option>
+        <option>Logística</option><option>Mantenimiento</option><option>Otro</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="btn-autoagregar" onclick="confirmarAutoAgregar()">Agregarme y firmar</button>
+  </div>
 </div>
 
 <!-- ══ PANTALLA: FIRMAR ══ -->
@@ -371,15 +407,15 @@ async function cargarCaps() {
 }
 
 function mostrar(id) {
-  ['p-inicio','p-abrir','p-buscar','p-firmar','p-cerrada'].forEach(p => {
+  ['p-inicio','p-abrir','p-buscar','p-firmar','p-cerrada','p-autoagregar'].forEach(p => {
     const el = document.getElementById(p);
     if (el) el.style.display = 'none';
   });
   document.getElementById(id).style.display = ['p-cerrada'].includes(id) ? 'block' : 'block';
 
-  const enSesion = ['p-buscar','p-firmar'].includes(id);
+  const enSesion = ['p-buscar','p-firmar','p-autoagregar'].includes(id);
   document.getElementById('app-header').style.display = enSesion ? 'flex' : 'none';
-  document.getElementById('footer-bar').style.display = enSesion ? 'flex' : 'none';
+  document.getElementById('footer-bar').style.display = ['p-buscar','p-firmar'].includes(id) ? 'flex' : 'none';
 
   if (id === 'p-buscar') {
     document.getElementById('inp-buscar').value = '';
@@ -453,11 +489,54 @@ function renderLista(q) {
       <div class="emp-avatar">${iniciales(e.nombre)}</div>
       <div style="flex:1">
         <div class="emp-name">${e.nombre}</div>
-        <div class="emp-info">${e.legajo} · ${e.sector || '—'} · ${e.turno || '—'}</div>
+        <div class="emp-info">DNI ${e.legajo} · ${e.sector || '—'}${e.auto_agregado ? ' · <span style="color:#92400E;">auto-agregado</span>' : ''}</div>
       </div>
       ${firmado ? '<div class="emp-check">✓</div>' : ''}
     </div>`;
   }).join('');
+}
+
+function abrirAutoAgregar() {
+  document.getElementById('aa-dni').value = '';
+  document.getElementById('aa-nombre').value = '';
+  document.getElementById('aa-sector').value = '';
+  mostrar('p-autoagregar');
+}
+
+async function confirmarAutoAgregar() {
+  const dni = document.getElementById('aa-dni').value.trim();
+  const nombre = document.getElementById('aa-nombre').value.trim();
+  const sector = document.getElementById('aa-sector').value;
+
+  if (!dni || !nombre || !sector) { toast('Completá todos los campos.'); return; }
+
+  const btn = document.getElementById('btn-autoagregar');
+  btn.disabled = true; btn.textContent = 'Agregando...';
+
+  // Verificar si ya existe (por DNI = legajo)
+  const yaExiste = empleados.find(e => e.legajo === dni);
+  if (yaExiste) {
+    btn.disabled = false; btn.textContent = 'Agregarme y firmar';
+    toast('Ese DNI ya está en la lista. Buscalo arriba.');
+    mostrar('p-buscar');
+    return;
+  }
+
+  const { data, error } = await sb.from('empleados')
+    .insert({ legajo: dni, nombre, sector, auto_agregado: true })
+    .select().single();
+
+  if (error) {
+    btn.disabled = false; btn.textContent = 'Agregarme y firmar';
+    toast(error.message.includes('unique') ? 'Ese DNI ya existe.' : 'Error al agregar.');
+    return;
+  }
+
+  empleados.push(data);
+  actualizarContador();
+  btn.disabled = false; btn.textContent = 'Agregarme y firmar';
+  toast('Agregado. Ahora firmá.');
+  seleccionar(data.id);
 }
 
 function seleccionar(id) {
@@ -466,7 +545,7 @@ function seleccionar(id) {
 
   document.getElementById('sel-avatar').textContent = iniciales(empSeleccionado.nombre);
   document.getElementById('sel-nombre').textContent = empSeleccionado.nombre;
-  document.getElementById('sel-info').textContent = 'Legajo ' + empSeleccionado.legajo + ' · ' + (empSeleccionado.sector || '—') + ' · Turno ' + (empSeleccionado.turno || '—');
+  document.getElementById('sel-info').textContent = 'DNI ' + empSeleccionado.legajo + ' · ' + (empSeleccionado.sector || '—');
 
   mostrar('p-firmar');
   setTimeout(() => {
