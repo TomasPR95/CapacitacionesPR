@@ -417,7 +417,6 @@ async function abrirSesion() {
 
   btn.disabled = false; btn.textContent = 'Abrir sesión y empezar';
   mostrar('p-buscar');
-  iniciarPad();
 }
 
 function iniciarPad() {
@@ -469,11 +468,13 @@ function seleccionar(id) {
   document.getElementById('sel-nombre').textContent = empSeleccionado.nombre;
   document.getElementById('sel-info').textContent = 'Legajo ' + empSeleccionado.legajo + ' · ' + (empSeleccionado.sector || '—') + ' · Turno ' + (empSeleccionado.turno || '—');
 
-  if (pad) pad.clear();
-  document.getElementById('sig-hint').style.display = 'block';
-  document.getElementById('sig-ts').textContent = '';
-  document.getElementById('btn-confirmar').disabled = true;
   mostrar('p-firmar');
+  setTimeout(() => {
+    iniciarPad();
+    document.getElementById('sig-hint').style.display = 'block';
+    document.getElementById('sig-ts').textContent = '';
+    document.getElementById('btn-confirmar').disabled = true;
+  }, 50);
 }
 
 function volver() {
