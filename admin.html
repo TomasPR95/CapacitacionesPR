@@ -447,11 +447,30 @@ tr:hover td { background: #fafeff; }
 
   <!-- ══ TAB: CURSOS ══ -->
   <div class="tab-content" id="t-cursos">
+    <!-- Carga masiva -->
     <div class="card">
-      <div class="card-header"><h2>Agregar capacitación</h2></div>
+      <div class="card-header">
+        <h2>Carga masiva desde Excel</h2>
+        <button class="btn btn-outline btn-sm" onclick="descargarPlantillaCursos()">⬇ Descargar plantilla</button>
+      </div>
+      <div class="card-body">
+        <p style="font-size:13px;color:#666;margin-bottom:12px;">
+          Subí un Excel con las columnas: <strong>titulo, tipo, responsable, duracion</strong>.
+          El código de capacitación se genera automáticamente.
+        </p>
+        <input type="file" id="file-masivo-cursos" accept=".xlsx,.xls,.csv"
+               style="font-size:13px;margin-bottom:12px;display:block;">
+        <button class="btn btn-success" onclick="procesarMasivoCursos()">Procesar archivo</button>
+        <div id="masivo-cursos-resultado" style="margin-top:12px;font-size:13px;"></div>
+      </div>
+    </div>
+
+    <!-- Alta individual -->
+    <div class="card">
+      <div class="card-header"><h2>Agregar capacitación individual</h2></div>
       <div class="card-body">
         <div class="form-group"><label>Título *</label><input type="text" id="c-titulo" placeholder="Ej: BPM avanzado"></div>
-        <div class="form-row">
+        <div class="form-row-3">
           <div class="form-group">
             <label>Tipo</label>
             <select id="c-tipo">
@@ -459,6 +478,7 @@ tr:hover td { background: #fafeff; }
               <option>Ambiental</option><option>Otro</option>
             </select>
           </div>
+          <div class="form-group"><label>Responsable</label><input type="text" id="c-responsable" placeholder="Nombre del responsable"></div>
           <div class="form-group"><label>Duración (hs)</label><input type="number" id="c-horas" placeholder="2.0" step="0.5"></div>
         </div>
         <div class="form-group">
@@ -469,12 +489,16 @@ tr:hover td { background: #fafeff; }
       </div>
     </div>
 
+    <!-- Tabla -->
     <div class="card">
-      <div class="card-header"><h2>Capacitaciones activas</h2></div>
+      <div class="card-header">
+        <h2>Capacitaciones activas (<span id="cursos-count">0</span>)</h2>
+        <input class="search-input" type="text" placeholder="Buscar..." oninput="filtrarTabla('tbl-cursos', this.value, [0,1,2])">
+      </div>
       <div class="table-wrap">
         <table id="tbl-cursos">
-          <thead><tr><th>Título</th><th>Tipo</th><th>Horas</th><th>Acción</th></tr></thead>
-          <tbody id="body-cursos"><tr class="empty-row"><td colspan="4">Cargando...</td></tr></tbody>
+          <thead><tr><th>Código</th><th>Título</th><th>Tipo</th><th>Responsable</th><th>Horas</th><th>Acción</th></tr></thead>
+          <tbody id="body-cursos"><tr class="empty-row"><td colspan="6">Cargando...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -882,38 +906,101 @@ async function darBajaEmp(id) {
 
 // ── CURSOS ──
 async function cargarCursos() {
-  const { data } = await sb.from('capacitaciones').select('*').eq('activa', true).order('titulo');
+  const { data } = await sb.from('capacitaciones').select('*').eq('activa', true).order('codigo');
   const tbody = document.getElementById('body-cursos');
-  if (!data || !data.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Sin capacitaciones.</td></tr>'; return; }
+  document.getElementById('cursos-count').textContent = data ? data.length : 0;
+  if (!data || !data.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Sin capacitaciones.</td></tr>'; return; }
   tbody.innerHTML = data.map(c => `<tr>
+    <td><span class="badge badge-gray">${c.codigo||'—'}</span></td>
     <td style="font-weight:500;">${c.titulo}</td>
     <td><span class="badge badge-blue">${c.tipo||'—'}</span></td>
+    <td>${c.responsable||'—'}</td>
     <td>${c.duracion_horas||'—'} hs</td>
     <td><button class="btn btn-outline btn-sm" onclick="darBajaCurso('${c.id}')">Desactivar</button></td>
   </tr>`).join('');
 }
 
 async function cargarCursosFiltro() {
-  const { data } = await sb.from('capacitaciones').select('id, titulo').eq('activa', true).order('titulo');
+  const { data } = await sb.from('capacitaciones').select('id, titulo, codigo').eq('activa', true).order('codigo');
   const sel = document.getElementById('f-curso-faltante');
   sel.innerHTML = '<option value="">Seleccioná un curso...</option>';
-  (data || []).forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.titulo; sel.appendChild(o); });
+  (data || []).forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = (c.codigo ? c.codigo + ' · ' : '') + c.titulo; sel.appendChild(o); });
 }
 
 async function agregarCurso() {
   const titulo = document.getElementById('c-titulo').value.trim();
   const tipo = document.getElementById('c-tipo').value;
+  const responsable = document.getElementById('c-responsable').value.trim();
   const horas = parseFloat(document.getElementById('c-horas').value) || null;
   const temario = document.getElementById('c-temario').value.trim();
   if (!titulo) { toast('Completá el título.'); return; }
-  const { error } = await sb.from('capacitaciones').insert({ titulo, tipo, duracion_horas: horas, temario });
+  const { error } = await sb.from('capacitaciones').insert({ titulo, tipo, responsable, duracion_horas: horas, temario });
   if (error) { toast('Error al guardar.'); return; }
   document.getElementById('c-titulo').value = '';
+  document.getElementById('c-responsable').value = '';
   document.getElementById('c-horas').value = '';
   document.getElementById('c-temario').value = '';
   toast('Capacitación agregada.');
   cargarCursos();
   cargarCursosFiltro();
+}
+
+// ── CARGA MASIVA CURSOS ──
+function descargarPlantillaCursos() {
+  const rows = [
+    ['titulo', 'tipo', 'responsable', 'duracion'],
+    ['BPM y manipulación de alimentos', 'BPM', 'M. González', 2],
+    ['Uso de EPP', 'Seguridad', 'J. Pérez', 1.5]
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Cursos');
+  XLSX.writeFile(wb, 'Plantilla_cursos.xlsx');
+}
+
+async function procesarMasivoCursos() {
+  const input = document.getElementById('file-masivo-cursos');
+  const res = document.getElementById('masivo-cursos-resultado');
+  if (!input.files.length) { toast('Seleccioná un archivo primero.'); return; }
+  res.innerHTML = '<span style="color:#888;">Procesando...</span>';
+
+  try {
+    const buf = await input.files[0].arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+    if (!rows.length) { res.innerHTML = '<span style="color:#c0392b;">El archivo está vacío.</span>'; return; }
+
+    const cursos = rows.map(r => {
+      const get = (keys) => {
+        for (const k of Object.keys(r)) {
+          const kn = k.toLowerCase().trim().replace(/ó/g,'o').replace(/á/g,'a').replace(/í/g,'i');
+          if (keys.includes(kn)) return String(r[k]).trim();
+        }
+        return '';
+      };
+      const dur = get(['duracion', 'duracion del curso', 'tiempo', 'tiempo duracion del curso', 'horas']);
+      return {
+        titulo: get(['titulo', 'titulo de capacitacion', 'titulo de la capacitacion', 'capacitacion']),
+        tipo: get(['tipo', 'tipo de capacitacion']),
+        responsable: get(['responsable', 'responsable del curso']),
+        duracion_horas: parseFloat(dur) || null
+      };
+    }).filter(c => c.titulo);
+
+    if (!cursos.length) {
+      res.innerHTML = '<span style="color:#c0392b;">No se encontraron cursos válidos. Revisá que exista la columna titulo.</span>';
+      return;
+    }
+
+    const { error } = await sb.from('capacitaciones').insert(cursos);
+    if (error) { res.innerHTML = '<span style="color:#c0392b;">Error: ' + error.message + '</span>'; return; }
+
+    res.innerHTML = '<span style="color:#1A6B3C;font-weight:600;">✓ ' + cursos.length + ' capacitaciones cargadas. Los códigos se asignaron automáticamente.</span>';
+    input.value = '';
+    cargarCursos();
+    cargarCursosFiltro();
+  } catch (err) {
+    res.innerHTML = '<span style="color:#c0392b;">Error al leer el archivo: ' + err.message + '</span>';
+  }
 }
 
 async function darBajaCurso(id) {
