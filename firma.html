@@ -359,12 +359,12 @@ window.addEventListener('load', () => {
 });
 
 async function cargarCaps() {
-  const { data } = await sb.from('capacitaciones').select('id,titulo,tipo').eq('activa', true).order('titulo');
+  const { data } = await sb.from('capacitaciones').select('id,titulo,tipo,codigo').eq('activa', true).order('codigo');
   const sel = document.getElementById('sel-cap');
   (data || []).forEach(c => {
     const o = document.createElement('option');
     o.value = c.id;
-    o.textContent = c.titulo + ' · ' + c.tipo;
+    o.textContent = (c.codigo ? c.codigo + ' · ' : '') + c.titulo + ' · ' + c.tipo;
     sel.appendChild(o);
   });
   mostrar('p-inicio');
@@ -400,7 +400,7 @@ async function abrirSesion() {
 
   const { data, error } = await sb.from('sesiones')
     .insert({ capacitacion_id: cap, fecha, lugar, instructor: inst })
-    .select('*, capacitaciones(titulo, tipo, duracion_horas)')
+    .select('*, capacitaciones(titulo, tipo, duracion_horas, codigo, responsable)')
     .single();
 
   if (error) { toast('Error al crear la sesión.'); btn.disabled = false; btn.textContent = 'Abrir sesión y empezar'; return; }
@@ -597,8 +597,8 @@ async function generarPDF(firmaInstructor) {
 
   const cap = sesion.capacitaciones;
   let y = 36;
-  [['Capacitacion', cap.titulo], ['Fecha y lugar', formatFecha(sesion.fecha) + ' - ' + (sesion.lugar || '-')],
-   ['Instructor', sesion.instructor], ['Duracion', (cap.duracion_horas || '-') + ' hs']
+  [['Codigo', cap.codigo || '-'], ['Capacitacion', cap.titulo], ['Fecha y lugar', formatFecha(sesion.fecha) + ' - ' + (sesion.lugar || '-')],
+   ['Instructor', sesion.instructor], ['Responsable', cap.responsable || '-'], ['Duracion', (cap.duracion_horas || '-') + ' hs']
   ].forEach(([k, v]) => {
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.text(k, m, y);
     doc.setFont('helvetica', 'normal'); doc.text(v, m + 35, y); y += 7;
