@@ -422,7 +422,10 @@ async function abrirSesion() {
 
 function iniciarPad() {
   const canvas = document.getElementById('sigCanvas');
-  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * window.devicePixelRatio;
+  canvas.height = rect.height * window.devicePixelRatio;
+  canvas.getContext('2d').scale(window.devicePixelRatio, window.devicePixelRatio);
   pad = new SignaturePad(canvas, { minWidth: 1.5, maxWidth: 3, penColor: '#111' });
   pad.addEventListener('beginStroke', () => {
     document.getElementById('sig-hint').style.display = 'none';
@@ -539,7 +542,10 @@ function validarPin() {
   document.getElementById('cierre-p1').style.display = 'none';
   document.getElementById('cierre-p2').style.display = 'block';
   const canvas = document.getElementById('sigInstructor');
-  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  const rect2 = canvas.getBoundingClientRect();
+  canvas.width = rect2.width * window.devicePixelRatio;
+  canvas.height = rect2.height * window.devicePixelRatio;
+  canvas.getContext('2d').scale(window.devicePixelRatio, window.devicePixelRatio);
   padInst = new SignaturePad(canvas, { minWidth: 1.5, maxWidth: 3, penColor: '#111' });
   padInst.addEventListener('beginStroke', () => {
     document.getElementById('sig-inst-hint').style.display = 'none';
