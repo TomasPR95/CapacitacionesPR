@@ -560,15 +560,13 @@ tr:hover td { background: #fafeff; }
         <div class="form-row">
           <div class="form-group">
             <label>Género</label>
-            <select id="e-genero">
-              <option>Femenino</option><option>Masculino</option>
-            </select>
+            <input list="dl-generos" id="e-genero" placeholder="Elegí o escribí uno nuevo">
+            <datalist id="dl-generos"></datalist>
           </div>
           <div class="form-group">
             <label>Convenio</label>
-            <select id="e-convenio">
-              <option>Dentro de convenio</option><option>Fuera de convenio</option>
-            </select>
+            <input list="dl-convenios" id="e-convenio" placeholder="Elegí o escribí uno nuevo">
+            <datalist id="dl-convenios"></datalist>
           </div>
         </div>
         <button class="btn btn-primary" onclick="agregarEmpleado()">+ Agregar empleado</button>
@@ -688,11 +686,11 @@ tr:hover td { background: #fafeff; }
     <div class="form-row">
       <div class="form-group">
         <label>Género</label>
-        <select id="edit-emp-genero"><option>Femenino</option><option>Masculino</option></select>
+        <input list="dl-generos" id="edit-emp-genero" placeholder="Elegí o escribí uno nuevo">
       </div>
       <div class="form-group">
         <label>Convenio</label>
-        <select id="edit-emp-convenio"><option>Dentro de convenio</option><option>Fuera de convenio</option></select>
+        <input list="dl-convenios" id="edit-emp-convenio" placeholder="Elegí o escribí uno nuevo">
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
@@ -1134,6 +1132,8 @@ async function cargarEmpleados() {
   poblarDatalist('dl-centros', data.map(e => e.centro), ['Bella Vista', 'San Rafael', 'Cafayate']);
   poblarDatalist('dl-sectores', data.map(e => e.sector), ['Envasado', 'Producción', 'Calidad', 'Logística', 'Mantenimiento']);
   poblarDatalist('dl-contratos', data.map(e => e.contrato), ['Efectivo', 'Temporada', 'Eventual', 'Agencia']);
+  poblarDatalist('dl-generos', data.map(e => e.genero), ['Femenino', 'Masculino']);
+  poblarDatalist('dl-convenios', data.map(e => e.convenio), ['Dentro de convenio', 'Fuera de convenio']);
 }
 
 function poblarDatalist(datalistId, valoresExistentes, predefinidos) {
@@ -1155,8 +1155,8 @@ async function agregarEmpleado() {
   const centro = document.getElementById('e-centro').value.trim();
   const sector = document.getElementById('e-sector').value.trim();
   const contrato = document.getElementById('e-contrato').value.trim();
-  const genero = document.getElementById('e-genero').value;
-  const convenio = document.getElementById('e-convenio').value;
+  const genero = document.getElementById('e-genero').value.trim();
+  const convenio = document.getElementById('e-convenio').value.trim();
   if (!legajo || !nombre) { toast('Completá legajo y nombre.'); return; }
   const { error } = await sb.from('empleados').insert({ legajo, nombre, centro, sector, contrato, genero, convenio });
   if (error) { toast(error.message.includes('unique') ? 'Ese legajo ya existe.' : 'Error al guardar.'); return; }
@@ -1294,8 +1294,8 @@ async function guardarEmp() {
     centro: document.getElementById('edit-emp-centro').value.trim(),
     sector: document.getElementById('edit-emp-sector').value.trim(),
     contrato: document.getElementById('edit-emp-contrato').value.trim(),
-    genero: document.getElementById('edit-emp-genero').value,
-    convenio: document.getElementById('edit-emp-convenio').value,
+    genero: document.getElementById('edit-emp-genero').value.trim(),
+    convenio: document.getElementById('edit-emp-convenio').value.trim(),
     auto_agregado: false
   }).eq('id', id);
   if (error) { toast(error.message.includes('unique') ? 'Ese legajo ya existe.' : 'Error al guardar.'); return; }
