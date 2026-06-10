@@ -1128,15 +1128,15 @@ async function cargarEmpleados() {
   sel.innerHTML = '<option value="">Todos</option>';
   sectores.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
 
-  // Poblar los datalist del alta combinando valores predefinidos + los que ya existen
-  poblarDatalist('dl-centros', data.map(e => e.centro), ['Bella Vista', 'San Rafael', 'Cafayate']);
-  poblarDatalist('dl-sectores', data.map(e => e.sector), ['Envasado', 'Producción', 'Calidad', 'Logística', 'Mantenimiento']);
-  poblarDatalist('dl-contratos', data.map(e => e.contrato), ['Efectivo', 'Temporada', 'Eventual', 'Agencia']);
-  poblarDatalist('dl-generos', data.map(e => e.genero), ['Femenino', 'Masculino']);
-  poblarDatalist('dl-convenios', data.map(e => e.convenio), ['Dentro de convenio', 'Fuera de convenio']);
+  // Poblar los datalist solo con los valores que ya existen entre los empleados
+  poblarDatalist('dl-centros', data.map(e => e.centro));
+  poblarDatalist('dl-sectores', data.map(e => e.sector));
+  poblarDatalist('dl-contratos', data.map(e => e.contrato));
+  poblarDatalist('dl-generos', data.map(e => e.genero));
+  poblarDatalist('dl-convenios', data.map(e => e.convenio));
 }
 
-function poblarDatalist(datalistId, valoresExistentes, predefinidos) {
+function poblarDatalist(datalistId, valoresExistentes, predefinidos = []) {
   const dl = document.getElementById(datalistId);
   if (!dl) return;
   const todos = [...new Set([...predefinidos, ...valoresExistentes.filter(Boolean)])].sort();
@@ -1272,11 +1272,11 @@ async function editarEmp(id) {
   document.getElementById('edit-emp-id').value = data.id;
   document.getElementById('edit-emp-legajo').value = data.legajo || '';
   document.getElementById('edit-emp-nombre').value = data.nombre || '';
-  document.getElementById('edit-emp-centro').value = data.centro || 'Bella Vista';
-  document.getElementById('edit-emp-sector').value = data.sector || 'Envasado';
-  document.getElementById('edit-emp-contrato').value = data.contrato || 'Efectivo';
-  document.getElementById('edit-emp-genero').value = data.genero || 'Femenino';
-  document.getElementById('edit-emp-convenio').value = data.convenio || 'Dentro de convenio';
+  document.getElementById('edit-emp-centro').value = data.centro || '';
+  document.getElementById('edit-emp-sector').value = data.sector || '';
+  document.getElementById('edit-emp-contrato').value = data.contrato || '';
+  document.getElementById('edit-emp-genero').value = data.genero || '';
+  document.getElementById('edit-emp-convenio').value = data.convenio || '';
   document.getElementById('modal-emp').classList.add('open');
 }
 
