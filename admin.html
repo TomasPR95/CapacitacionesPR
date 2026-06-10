@@ -674,22 +674,15 @@ tr:hover td { background: #fafeff; }
     <div class="form-row-3">
       <div class="form-group">
         <label>Centro</label>
-        <select id="edit-emp-centro">
-          <option>Bella Vista</option><option>San Rafael</option><option>Cafayate</option>
-        </select>
+        <input list="dl-centros" id="edit-emp-centro" placeholder="Elegí o escribí uno nuevo">
       </div>
       <div class="form-group">
         <label>Sector</label>
-        <select id="edit-emp-sector">
-          <option>Envasado</option><option>Producción</option><option>Calidad</option>
-          <option>Logística</option><option>Mantenimiento</option><option>Otro</option>
-        </select>
+        <input list="dl-sectores" id="edit-emp-sector" placeholder="Elegí o escribí uno nuevo">
       </div>
       <div class="form-group">
         <label>Contrato</label>
-        <select id="edit-emp-contrato">
-          <option>Efectivo</option><option>Temporada</option><option>Eventual</option><option>Agencia</option>
-        </select>
+        <input list="dl-contratos" id="edit-emp-contrato" placeholder="Elegí o escribí uno nuevo">
       </div>
     </div>
     <div class="form-row">
@@ -1298,9 +1291,9 @@ async function guardarEmp() {
   if (!legajo || !nombre) { toast('Completá legajo y nombre.'); return; }
   const { error } = await sb.from('empleados').update({
     legajo, nombre,
-    centro: document.getElementById('edit-emp-centro').value,
-    sector: document.getElementById('edit-emp-sector').value,
-    contrato: document.getElementById('edit-emp-contrato').value,
+    centro: document.getElementById('edit-emp-centro').value.trim(),
+    sector: document.getElementById('edit-emp-sector').value.trim(),
+    contrato: document.getElementById('edit-emp-contrato').value.trim(),
     genero: document.getElementById('edit-emp-genero').value,
     convenio: document.getElementById('edit-emp-convenio').value,
     auto_agregado: false
