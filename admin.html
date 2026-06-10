@@ -570,8 +570,13 @@ tr:hover td { background: #fafeff; }
     <div id="aviso-pendientes"></div>
     <div class="card">
       <div class="card-header">
-        <h2>Empleados activos (<span id="emp-count">0</span>)</h2>
-        <input class="search-input" type="text" placeholder="Buscar..." oninput="filtrarTabla('tbl-emp', this.value, [0,1,2])">
+        <h2>Empleados (<span id="emp-count">0</span>)</h2>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <label style="font-size:13px;color:#666;display:flex;align-items:center;gap:5px;cursor:pointer;">
+            <input type="checkbox" id="ver-inactivos" onchange="cargarEmpleados()" style="width:auto;"> Ver dados de baja
+          </label>
+          <input class="search-input" type="text" placeholder="Buscar..." oninput="filtrarTabla('tbl-emp', this.value, [0,1,2])">
+        </div>
       </div>
       <div class="table-wrap">
         <table id="tbl-emp">
@@ -995,13 +1000,17 @@ async function exportarExcel() {
 
 // ── EMPLEADOS ──
 async function cargarEmpleados() {
-  const { data } = await sb.from('empleados').select('*').eq('activo', true).order('auto_agregado', { ascending: false }).order('nombre');
+  const verInactivos = document.getElementById('ver-inactivos')?.checked;
+  let q = sb.from('empleados').select('*').order('auto_agregado', { ascending: false }).order('nombre');
+  if (!verInactivos) q = q.eq('activo', true);
+  const { data } = await q;
+
   const tbody = document.getElementById('body-emp');
   document.getElementById('emp-count').textContent = data ? data.length : 0;
   if (!data || !data.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Sin empleados.</td></tr>'; return; }
 
   // Aviso de pendientes de validar
-  const pendientes = data.filter(e => e.auto_agregado).length;
+  const pendientes = data.filter(e => e.auto_agregado && e.activo).length;
   const avisoEl = document.getElementById('aviso-pendientes');
   if (avisoEl) {
     avisoEl.innerHTML = pendientes
@@ -1009,19 +1018,29 @@ async function cargarEmpleados() {
       : '';
   }
 
-  tbody.innerHTML = data.map(e => `<tr ${e.auto_agregado ? 'style="background:#FEFCE8;"' : ''}>
-    <td>${e.legajo}</td>
-    <td style="font-weight:500;">${e.nombre}${e.auto_agregado ? ' <span class="badge badge-yellow">Pendiente</span>' : ''}</td>
-    <td>${e.centro||'—'}</td>
-    <td>${e.sector||'—'}</td>
-    <td>${e.contrato||'—'}</td>
-    <td>${e.genero||'—'}</td>
-    <td>${e.convenio||'—'}</td>
-    <td>
-      ${e.auto_agregado ? `<button class="btn btn-success btn-sm" onclick="validarEmp('${e.id}')">Validar</button> ` : ''}
-      <button class="btn btn-outline btn-sm" onclick="darBajaEmp('${e.id}')">Dar de baja</button>
-    </td>
-  </tr>`).join('');
+  tbody.innerHTML = data.map(e => {
+    const inactivo = !e.activo;
+    const bg = inactivo ? 'style="background:#F5F5F5;opacity:0.7;"' : (e.auto_agregado ? 'style="background:#FEFCE8;"' : '');
+    let acciones = '';
+    if (inactivo) {
+      acciones = `<button class="btn btn-success btn-sm" onclick="reactivarEmp('${e.id}')">Reactivar</button> `;
+    } else {
+      if (e.auto_agregado) acciones += `<button class="btn btn-success btn-sm" onclick="validarEmp('${e.id}')">Validar</button> `;
+      acciones += `<button class="btn btn-outline btn-sm" onclick="darBajaEmp('${e.id}')">Dar de baja</button> `;
+    }
+    acciones += `<button class="btn btn-outline btn-sm" style="color:#c0392b;border-color:#e8c0c0;" onclick="eliminarEmp('${e.id}', '${e.nombre.replace(/'/g,'')}')">Eliminar</button>`;
+
+    return `<tr ${bg}>
+      <td>${e.legajo}</td>
+      <td style="font-weight:500;">${e.nombre}${inactivo ? ' <span class="badge badge-gray">Baja</span>' : (e.auto_agregado ? ' <span class="badge badge-yellow">Pendiente</span>' : '')}</td>
+      <td>${e.centro||'—'}</td>
+      <td>${e.sector||'—'}</td>
+      <td>${e.contrato||'—'}</td>
+      <td>${e.genero||'—'}</td>
+      <td>${e.convenio||'—'}</td>
+      <td>${acciones}</td>
+    </tr>`;
+  }).join('');
 
   const sectores = [...new Set(data.map(e => e.sector).filter(Boolean))].sort();
   const sel = document.getElementById('f-sector');
@@ -1122,9 +1141,33 @@ async function procesarMasivo() {
 }
 
 async function darBajaEmp(id) {
-  if (!confirm('Dar de baja este empleado?')) return;
+  if (!confirm('¿Dar de baja este empleado? Podés reactivarlo después.')) return;
   await sb.from('empleados').update({ activo: false }).eq('id', id);
   toast('Empleado dado de baja.');
+  cargarEmpleados();
+}
+
+async function reactivarEmp(id) {
+  await sb.from('empleados').update({ activo: true }).eq('id', id);
+  toast('Empleado reactivado.');
+  cargarEmpleados();
+}
+
+async function eliminarEmp(id, nombre) {
+  // Contar asistencias del empleado
+  const { count } = await sb.from('asistencias').select('id', { count: 'exact', head: true }).eq('empleado_id', id);
+  const n = count || 0;
+  const msg = n > 0
+    ? `¿Eliminar definitivamente a "${nombre}"? Tiene ${n} firma(s) registrada(s) que también se borrarán. Esta acción NO se puede deshacer.`
+    : `¿Eliminar definitivamente a "${nombre}"? Esta acción NO se puede deshacer.`;
+  if (!confirm(msg)) return;
+
+  // Borrar asistencias y convocatorias asociadas, luego el empleado
+  await sb.from('asistencias').delete().eq('empleado_id', id);
+  await sb.from('convocados').delete().eq('empleado_id', id);
+  const { error } = await sb.from('empleados').delete().eq('id', id);
+  if (error) { toast('Error al eliminar: ' + error.message); return; }
+  toast('Empleado eliminado definitivamente.');
   cargarEmpleados();
 }
 
