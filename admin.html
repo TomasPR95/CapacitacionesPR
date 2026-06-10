@@ -543,23 +543,18 @@ tr:hover td { background: #fafeff; }
         <div class="form-row-3">
           <div class="form-group">
             <label>Centro productivo</label>
-            <select id="e-centro">
-              <option>Bella Vista</option><option>San Rafael</option><option>Cafayate</option>
-            </select>
+            <input list="dl-centros" id="e-centro" placeholder="Elegí o escribí uno nuevo">
+            <datalist id="dl-centros"></datalist>
           </div>
           <div class="form-group">
             <label>Sector</label>
-            <select id="e-sector">
-              <option>Envasado</option><option>Producción</option><option>Calidad</option>
-              <option>Logística</option><option>Mantenimiento</option><option>Otro</option>
-            </select>
+            <input list="dl-sectores" id="e-sector" placeholder="Elegí o escribí uno nuevo">
+            <datalist id="dl-sectores"></datalist>
           </div>
           <div class="form-group">
             <label>Contrato</label>
-            <select id="e-contrato">
-              <option>Efectivo</option><option>Temporada</option>
-              <option>Eventual</option><option>Agencia</option>
-            </select>
+            <input list="dl-contratos" id="e-contrato" placeholder="Elegí o escribí uno nuevo">
+            <datalist id="dl-contratos"></datalist>
           </div>
         </div>
         <div class="form-row">
@@ -1141,6 +1136,18 @@ async function cargarEmpleados() {
   const sel = document.getElementById('f-sector');
   sel.innerHTML = '<option value="">Todos</option>';
   sectores.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+
+  // Poblar los datalist del alta combinando valores predefinidos + los que ya existen
+  poblarDatalist('dl-centros', data.map(e => e.centro), ['Bella Vista', 'San Rafael', 'Cafayate']);
+  poblarDatalist('dl-sectores', data.map(e => e.sector), ['Envasado', 'Producción', 'Calidad', 'Logística', 'Mantenimiento']);
+  poblarDatalist('dl-contratos', data.map(e => e.contrato), ['Efectivo', 'Temporada', 'Eventual', 'Agencia']);
+}
+
+function poblarDatalist(datalistId, valoresExistentes, predefinidos) {
+  const dl = document.getElementById(datalistId);
+  if (!dl) return;
+  const todos = [...new Set([...predefinidos, ...valoresExistentes.filter(Boolean)])].sort();
+  dl.innerHTML = todos.map(v => `<option value="${v}">`).join('');
 }
 
 async function validarEmp(id) {
@@ -1152,9 +1159,9 @@ async function validarEmp(id) {
 async function agregarEmpleado() {
   const legajo = document.getElementById('e-legajo').value.trim();
   const nombre = document.getElementById('e-nombre').value.trim();
-  const centro = document.getElementById('e-centro').value;
-  const sector = document.getElementById('e-sector').value;
-  const contrato = document.getElementById('e-contrato').value;
+  const centro = document.getElementById('e-centro').value.trim();
+  const sector = document.getElementById('e-sector').value.trim();
+  const contrato = document.getElementById('e-contrato').value.trim();
   const genero = document.getElementById('e-genero').value;
   const convenio = document.getElementById('e-convenio').value;
   if (!legajo || !nombre) { toast('Completá legajo y nombre.'); return; }
