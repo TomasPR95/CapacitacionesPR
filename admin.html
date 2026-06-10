@@ -227,10 +227,31 @@ tr:hover td { background: #fafeff; }
     </div>
 
     <div class="card">
-      <div class="card-header">
-        <h2>Historial de sesiones</h2>
-        <input class="search-input" type="text" placeholder="Buscar sesión..."
-               oninput="filtrarTabla('tbl-sesiones', this.value, [0,1,2])">
+      <div class="filters" style="border-radius:10px 10px 0 0;">
+        <div class="filter-group">
+          <label>Año fiscal (Jul–Jun)</label>
+          <select id="ses-periodo" onchange="cargarSesiones()"></select>
+        </div>
+        <div class="filter-group">
+          <label>Centro</label>
+          <select id="ses-centro" onchange="cargarSesiones()">
+            <option value="">Todos los centros</option>
+            <option>Bella Vista</option><option>San Rafael</option><option>Cafayate</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Estado</label>
+          <select id="ses-estado" onchange="cargarSesiones()">
+            <option value="">Todas</option>
+            <option value="cerrada">Cerradas</option>
+            <option value="abierta">Abiertas</option>
+          </select>
+        </div>
+        <div class="filter-group" style="flex:2;">
+          <label>Buscar</label>
+          <input type="text" placeholder="Capacitación, instructor..."
+                 oninput="filtrarTabla('tbl-sesiones', this.value, [0,1,2,4])">
+        </div>
       </div>
       <div class="table-wrap">
         <table id="tbl-sesiones">
@@ -239,16 +260,17 @@ tr:hover td { background: #fafeff; }
               <th onclick="sort('tbl-sesiones',0)">Fecha ↕</th>
               <th onclick="sort('tbl-sesiones',1)">Capacitación ↕</th>
               <th>Tipo</th>
-              <th onclick="sort('tbl-sesiones',3)">Instructor ↕</th>
+              <th onclick="sort('tbl-sesiones',3)">Centro ↕</th>
+              <th onclick="sort('tbl-sesiones',4)">Instructor ↕</th>
               <th>Lugar</th>
-              <th onclick="sort('tbl-sesiones',5)">Asistentes ↕</th>
+              <th onclick="sort('tbl-sesiones',6)">Asistentes ↕</th>
               <th>Estado</th>
               <th>PDF</th>
               <th>Acción</th>
             </tr>
           </thead>
           <tbody id="body-sesiones">
-            <tr class="empty-row"><td colspan="9">Cargando...</td></tr>
+            <tr class="empty-row"><td colspan="10">Cargando...</td></tr>
           </tbody>
         </table>
       </div>
@@ -656,7 +678,7 @@ function nombrePeriodo(p) { return 'Jul ' + p + ' – Jun ' + (p + 1); }
 function inicializarPeriodos() {
   const actual = periodoActual();
   const opciones = [actual - 1, actual, actual + 1];
-  ['av-periodo', 'pl-periodo', 'pl-filtro-periodo'].forEach(id => {
+  ['av-periodo', 'pl-periodo', 'pl-filtro-periodo', 'ses-periodo'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     sel.innerHTML = '';
@@ -676,23 +698,37 @@ function anioDeMes(mes, periodo) { return mes >= 7 ? periodo : periodo + 1; }
 
 // ── SESIONES ──
 async function cargarSesiones() {
-  const hoy = new Date();
-  const desde = hoy.getFullYear() + '-01-01';
+  // Filtros
+  const periodo = parseInt(document.getElementById('ses-periodo')?.value) || periodoActual();
+  const centroF = document.getElementById('ses-centro')?.value || '';
+  const estadoF = document.getElementById('ses-estado')?.value || '';
 
-  const { data: ses } = await sb.from('sesiones')
+  // Rango del año fiscal: jul del periodo a jun del siguiente
+  const desde = periodo + '-07-01';
+  const hasta = (periodo + 1) + '-06-30';
+
+  let q = sb.from('sesiones')
     .select('*, capacitaciones(titulo, tipo, duracion_horas)')
-    .gte('fecha', desde).order('fecha', { ascending: false });
+    .gte('fecha', desde).lte('fecha', hasta)
+    .order('fecha', { ascending: false });
+  if (centroF) q = q.eq('centro', centroF);
+  if (estadoF) q = q.eq('estado', estadoF);
+  const { data: ses } = await q;
 
   const sesiones = ses || [];
+  const sesIds = sesiones.map(s => s.id);
 
-  const { data: asi } = await sb.from('asistencias').select('sesion_id, empleado_id').eq('anulada', false);
-  const asistencias = asi || [];
+  let asistencias = [];
+  if (sesIds.length) {
+    const { data: asi } = await sb.from('asistencias').select('sesion_id, empleado_id').in('sesion_id', sesIds).eq('anulada', false);
+    asistencias = asi || [];
+  }
 
   const conteo = {};
   asistencias.forEach(a => { conteo[a.sesion_id] = (conteo[a.sesion_id] || 0) + 1; });
 
   document.getElementById('m-sesiones').textContent = sesiones.length;
-  document.getElementById('m-sesiones-sub').textContent = 'en ' + hoy.getFullYear();
+  document.getElementById('m-sesiones-sub').textContent = nombrePeriodo(periodo);
   document.getElementById('m-asistencias').textContent = asistencias.length;
   const personasU = new Set(asistencias.map(a => a.empleado_id)).size;
   document.getElementById('m-personas').textContent = personasU;
@@ -701,7 +737,7 @@ async function cargarSesiones() {
 
   const tbody = document.getElementById('body-sesiones');
   if (!sesiones.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Sin sesiones registradas.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Sin sesiones para los filtros seleccionados.</td></tr>';
     return;
   }
   tbody.innerHTML = sesiones.map(s => {
@@ -716,6 +752,7 @@ async function cargarSesiones() {
       <td>${formatFecha(s.fecha)}</td>
       <td style="font-weight:500;">${s.capacitaciones?.titulo || '—'}</td>
       <td><span class="badge badge-blue">${s.capacitaciones?.tipo || '—'}</span></td>
+      <td>${s.centro || '—'}</td>
       <td>${s.instructor || '—'}</td>
       <td>${s.lugar || '—'}</td>
       <td style="font-weight:600;">${n}</td>
@@ -1288,16 +1325,17 @@ async function cargarAvance() {
   // 3. Asistencias de esas sesiones
   const sesIds = (sesiones || []).map(s => s.id);
   let asistencias = [];
+  let convocados = [];
   if (sesIds.length) {
-    const { data } = await sb.from('asistencias')
+    const { data: asi } = await sb.from('asistencias')
       .select('sesion_id, empleado_id').in('sesion_id', sesIds).eq('anulada', false);
-    asistencias = data || [];
+    asistencias = asi || [];
+    const { data: conv } = await sb.from('convocados')
+      .select('sesion_id, empleado_id, empleados(id, legajo, nombre, sector)').in('sesion_id', sesIds);
+    convocados = conv || [];
   }
 
-  // 4. Empleados por centro (para calcular ausentes)
-  const { data: empleados } = await sb.from('empleados').select('id, legajo, nombre, centro, sector').eq('activo', true);
-
-  // 5. Cruzar plan vs realizado
+  // 4. Cruzar plan vs realizado
   let realizadas = 0;
   const filas = plan.map(p => {
     // Sesiones que corresponden a este curso+centro
@@ -1306,15 +1344,24 @@ async function cargarAvance() {
     const dictada = sesDelPlan.length > 0;
     if (dictada) realizadas++;
 
-    // Asistentes a ese curso en ese centro
     const sesDelPlanIds = sesDelPlan.map(s => s.id);
+
+    // Quiénes asistieron (firmaron)
     const asistieron = new Set(asistencias.filter(a => sesDelPlanIds.includes(a.sesion_id)).map(a => a.empleado_id));
 
-    // Personal del centro
-    const personalCentro = empleados.filter(e => e.centro === p.centro);
-    const ausentes = personalCentro.filter(e => !asistieron.has(e.id));
+    // Quiénes estaban convocados (definidos por el instructor)
+    const convDelPlan = convocados.filter(c => sesDelPlanIds.includes(c.sesion_id));
+    const convocadosUnicos = {};
+    convDelPlan.forEach(c => { if (c.empleados) convocadosUnicos[c.empleado_id] = c.empleados; });
 
-    return { plan: p, dictada, sesiones: sesDelPlan, asistieron: asistieron.size, totalCentro: personalCentro.length, ausentes };
+    // Ausentes = convocados que no firmaron
+    const ausentes = Object.entries(convocadosUnicos)
+      .filter(([id]) => !asistieron.has(id))
+      .map(([, emp]) => emp);
+
+    const totalConvocados = Object.keys(convocadosUnicos).length;
+
+    return { plan: p, dictada, sesiones: sesDelPlan, asistieron: asistieron.size, totalConvocados, ausentes };
   });
 
   const planificadas = plan.length;
@@ -1329,7 +1376,7 @@ async function cargarAvance() {
 
   // Tabla detalle
   const wrap = document.getElementById('avance-wrap');
-  let html = '<table><thead><tr><th>Código</th><th>Capacitación</th><th>Centro</th><th>Mes plan</th><th>Estado</th><th>Asistieron</th><th>Ausentes</th></tr></thead><tbody>';
+  let html = '<table><thead><tr><th>Código</th><th>Capacitación</th><th>Centro</th><th>Mes plan</th><th>Estado</th><th>Asist./convoc.</th><th>Ausentes</th></tr></thead><tbody>';
   filas.sort((a,b) => a.plan.mes - b.plan.mes).forEach(f => {
     const estado = f.dictada
       ? '<span class="badge badge-green">Dictada</span>'
@@ -1343,7 +1390,7 @@ async function cargarAvance() {
       <td>${f.plan.centro}</td>
       <td>${MESES[f.plan.mes]}</td>
       <td>${estado}</td>
-      <td>${f.dictada ? f.asistieron + '/' + f.totalCentro : '—'}</td>
+      <td>${f.dictada ? f.asistieron + '/' + f.totalConvocados : '—'}</td>
       <td>${ausentesTxt}</td>
     </tr>`;
   });
