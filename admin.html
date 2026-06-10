@@ -634,8 +634,13 @@ tr:hover td { background: #fafeff; }
     <!-- Tabla -->
     <div class="card">
       <div class="card-header">
-        <h2>Capacitaciones activas (<span id="cursos-count">0</span>)</h2>
-        <input class="search-input" type="text" placeholder="Buscar..." oninput="filtrarTabla('tbl-cursos', this.value, [0,1,2])">
+        <h2>Capacitaciones (<span id="cursos-count">0</span>)</h2>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <label style="font-size:13px;color:#666;display:flex;align-items:center;gap:5px;cursor:pointer;">
+            <input type="checkbox" id="ver-cursos-inactivos" onchange="cargarCursos()" style="width:auto;"> Ver desactivadas
+          </label>
+          <input class="search-input" type="text" placeholder="Buscar..." oninput="filtrarTabla('tbl-cursos', this.value, [0,1,2])">
+        </div>
       </div>
       <div class="table-wrap">
         <table id="tbl-cursos">
@@ -1173,18 +1178,33 @@ async function eliminarEmp(id, nombre) {
 
 // ── CURSOS ──
 async function cargarCursos() {
-  const { data } = await sb.from('capacitaciones').select('*').eq('activa', true).order('codigo');
+  const verInactivos = document.getElementById('ver-cursos-inactivos')?.checked;
+  let q = sb.from('capacitaciones').select('*').order('codigo');
+  if (!verInactivos) q = q.eq('activa', true);
+  const { data } = await q;
+
   const tbody = document.getElementById('body-cursos');
   document.getElementById('cursos-count').textContent = data ? data.length : 0;
   if (!data || !data.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Sin capacitaciones.</td></tr>'; return; }
-  tbody.innerHTML = data.map(c => `<tr>
-    <td><span class="badge badge-gray">${c.codigo||'—'}</span></td>
-    <td style="font-weight:500;">${c.titulo}</td>
-    <td><span class="badge badge-blue">${c.tipo||'—'}</span></td>
-    <td>${c.responsable||'—'}</td>
-    <td>${c.duracion_horas||'—'} hs</td>
-    <td><button class="btn btn-outline btn-sm" onclick="darBajaCurso('${c.id}')">Desactivar</button></td>
-  </tr>`).join('');
+  tbody.innerHTML = data.map(c => {
+    const inactivo = !c.activa;
+    const bg = inactivo ? 'style="background:#F5F5F5;opacity:0.7;"' : '';
+    let acciones = '';
+    if (inactivo) {
+      acciones = `<button class="btn btn-success btn-sm" onclick="reactivarCurso('${c.id}')">Reactivar</button> `;
+    } else {
+      acciones = `<button class="btn btn-outline btn-sm" onclick="darBajaCurso('${c.id}')">Desactivar</button> `;
+    }
+    acciones += `<button class="btn btn-outline btn-sm" style="color:#c0392b;border-color:#e8c0c0;" onclick="eliminarCurso('${c.id}', '${c.titulo.replace(/'/g,'')}')">Eliminar</button>`;
+    return `<tr ${bg}>
+      <td><span class="badge badge-gray">${c.codigo||'—'}</span></td>
+      <td style="font-weight:500;">${c.titulo}${inactivo ? ' <span class="badge badge-gray">Inactiva</span>' : ''}</td>
+      <td><span class="badge badge-blue">${c.tipo||'—'}</span></td>
+      <td>${c.responsable||'—'}</td>
+      <td>${c.duracion_horas||'—'} hs</td>
+      <td>${acciones}</td>
+    </tr>`;
+  }).join('');
 }
 
 async function cargarCursosFiltro() {
@@ -1273,10 +1293,46 @@ async function procesarMasivoCursos() {
 }
 
 async function darBajaCurso(id) {
-  if (!confirm('Desactivar esta capacitación?')) return;
+  if (!confirm('¿Desactivar esta capacitación? Podés reactivarla después.')) return;
   await sb.from('capacitaciones').update({ activa: false }).eq('id', id);
   toast('Capacitación desactivada.');
   cargarCursos();
+  cargarCursosFiltro();
+  cargarPlanCursos();
+}
+
+async function reactivarCurso(id) {
+  await sb.from('capacitaciones').update({ activa: true }).eq('id', id);
+  toast('Capacitación reactivada.');
+  cargarCursos();
+  cargarCursosFiltro();
+  cargarPlanCursos();
+}
+
+async function eliminarCurso(id, titulo) {
+  // Contar sesiones del curso
+  const { count } = await sb.from('sesiones').select('id', { count: 'exact', head: true }).eq('capacitacion_id', id);
+  const n = count || 0;
+  const msg = n > 0
+    ? `¿Eliminar definitivamente "${titulo}"? Tiene ${n} sesión(es) dictada(s) que también se borrarán, junto con sus firmas. Esta acción NO se puede deshacer.`
+    : `¿Eliminar definitivamente "${titulo}"? Esta acción NO se puede deshacer.`;
+  if (!confirm(msg)) return;
+
+  // Borrar en orden: asistencias y convocados de las sesiones del curso, luego sesiones, plan y curso
+  const { data: ses } = await sb.from('sesiones').select('id').eq('capacitacion_id', id);
+  const sesIds = (ses || []).map(s => s.id);
+  if (sesIds.length) {
+    await sb.from('asistencias').delete().in('sesion_id', sesIds);
+    await sb.from('convocados').delete().in('sesion_id', sesIds);
+    await sb.from('sesiones').delete().eq('capacitacion_id', id);
+  }
+  await sb.from('plan_capacitacion').delete().eq('capacitacion_id', id);
+  const { error } = await sb.from('capacitaciones').delete().eq('id', id);
+  if (error) { toast('Error al eliminar: ' + error.message); return; }
+  toast('Capacitación eliminada definitivamente.');
+  cargarCursos();
+  cargarCursosFiltro();
+  cargarPlanCursos();
 }
 
 async function cargarSectores() {
