@@ -164,6 +164,20 @@ tr:hover td { background: #fafeff; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
+/* ── MODAL ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 500;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.overlay.open { display: flex; }
+.modal {
+  background: white; border-radius: 12px;
+  padding: 24px; width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto;
+}
+.modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+
 /* ── TOAST ── */
 .toast {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -653,6 +667,81 @@ tr:hover td { background: #fafeff; }
 
 </div>
 
+<!-- MODAL: EDITAR EMPLEADO -->
+<div class="overlay" id="modal-emp">
+  <div class="modal">
+    <h3>Editar empleado</h3>
+    <input type="hidden" id="edit-emp-id">
+    <div class="form-row">
+      <div class="form-group"><label>DNI/Legajo</label><input type="text" id="edit-emp-legajo"></div>
+      <div class="form-group"><label>Nombre y apellido</label><input type="text" id="edit-emp-nombre"></div>
+    </div>
+    <div class="form-row-3">
+      <div class="form-group">
+        <label>Centro</label>
+        <select id="edit-emp-centro">
+          <option>Bella Vista</option><option>San Rafael</option><option>Cafayate</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sector</label>
+        <select id="edit-emp-sector">
+          <option>Envasado</option><option>Producción</option><option>Calidad</option>
+          <option>Logística</option><option>Mantenimiento</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Contrato</label>
+        <select id="edit-emp-contrato">
+          <option>Efectivo</option><option>Temporada</option><option>Eventual</option><option>Agencia</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Género</label>
+        <select id="edit-emp-genero"><option>Femenino</option><option>Masculino</option></select>
+      </div>
+      <div class="form-group">
+        <label>Convenio</label>
+        <select id="edit-emp-convenio"><option>Dentro de convenio</option><option>Fuera de convenio</option></select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+      <button class="btn btn-outline" onclick="cerrarModalEmp()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarEmp()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDITAR CURSO -->
+<div class="overlay" id="modal-curso">
+  <div class="modal">
+    <h3>Editar capacitación</h3>
+    <input type="hidden" id="edit-curso-id">
+    <div class="form-group"><label>Título</label><input type="text" id="edit-curso-titulo"></div>
+    <div class="form-row-3">
+      <div class="form-group">
+        <label>Tipo</label>
+        <select id="edit-curso-tipo">
+          <option>BPM</option><option>Seguridad</option><option>Calidad</option>
+          <option>Ambiental</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Responsable</label><input type="text" id="edit-curso-responsable"></div>
+      <div class="form-group"><label>Duración (hs)</label><input type="number" id="edit-curso-horas" step="0.5"></div>
+    </div>
+    <div class="form-group">
+      <label>Temario</label>
+      <textarea id="edit-curso-temario" rows="2"></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+      <button class="btn btn-outline" onclick="cerrarModalCurso()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCurso()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1031,6 +1120,7 @@ async function cargarEmpleados() {
       acciones = `<button class="btn btn-success btn-sm" onclick="reactivarEmp('${e.id}')">Reactivar</button> `;
     } else {
       if (e.auto_agregado) acciones += `<button class="btn btn-success btn-sm" onclick="validarEmp('${e.id}')">Validar</button> `;
+      acciones += `<button class="btn btn-outline btn-sm" onclick="editarEmp('${e.id}')">Editar</button> `;
       acciones += `<button class="btn btn-outline btn-sm" onclick="darBajaEmp('${e.id}')">Dar de baja</button> `;
     }
     acciones += `<button class="btn btn-outline btn-sm" style="color:#c0392b;border-color:#e8c0c0;" onclick="eliminarEmp('${e.id}', '${e.nombre.replace(/'/g,'')}')">Eliminar</button>`;
@@ -1176,6 +1266,44 @@ async function eliminarEmp(id, nombre) {
   cargarEmpleados();
 }
 
+async function editarEmp(id) {
+  const { data } = await sb.from('empleados').select('*').eq('id', id).single();
+  if (!data) { toast('No se encontró el empleado.'); return; }
+  document.getElementById('edit-emp-id').value = data.id;
+  document.getElementById('edit-emp-legajo').value = data.legajo || '';
+  document.getElementById('edit-emp-nombre').value = data.nombre || '';
+  document.getElementById('edit-emp-centro').value = data.centro || 'Bella Vista';
+  document.getElementById('edit-emp-sector').value = data.sector || 'Envasado';
+  document.getElementById('edit-emp-contrato').value = data.contrato || 'Efectivo';
+  document.getElementById('edit-emp-genero').value = data.genero || 'Femenino';
+  document.getElementById('edit-emp-convenio').value = data.convenio || 'Dentro de convenio';
+  document.getElementById('modal-emp').classList.add('open');
+}
+
+function cerrarModalEmp() {
+  document.getElementById('modal-emp').classList.remove('open');
+}
+
+async function guardarEmp() {
+  const id = document.getElementById('edit-emp-id').value;
+  const legajo = document.getElementById('edit-emp-legajo').value.trim();
+  const nombre = document.getElementById('edit-emp-nombre').value.trim();
+  if (!legajo || !nombre) { toast('Completá legajo y nombre.'); return; }
+  const { error } = await sb.from('empleados').update({
+    legajo, nombre,
+    centro: document.getElementById('edit-emp-centro').value,
+    sector: document.getElementById('edit-emp-sector').value,
+    contrato: document.getElementById('edit-emp-contrato').value,
+    genero: document.getElementById('edit-emp-genero').value,
+    convenio: document.getElementById('edit-emp-convenio').value,
+    auto_agregado: false
+  }).eq('id', id);
+  if (error) { toast(error.message.includes('unique') ? 'Ese legajo ya existe.' : 'Error al guardar.'); return; }
+  cerrarModalEmp();
+  toast('Empleado actualizado.');
+  cargarEmpleados();
+}
+
 // ── CURSOS ──
 async function cargarCursos() {
   const verInactivos = document.getElementById('ver-cursos-inactivos')?.checked;
@@ -1193,7 +1321,8 @@ async function cargarCursos() {
     if (inactivo) {
       acciones = `<button class="btn btn-success btn-sm" onclick="reactivarCurso('${c.id}')">Reactivar</button> `;
     } else {
-      acciones = `<button class="btn btn-outline btn-sm" onclick="darBajaCurso('${c.id}')">Desactivar</button> `;
+      acciones = `<button class="btn btn-outline btn-sm" onclick="editarCurso('${c.id}')">Editar</button> `;
+      acciones += `<button class="btn btn-outline btn-sm" onclick="darBajaCurso('${c.id}')">Desactivar</button> `;
     }
     acciones += `<button class="btn btn-outline btn-sm" style="color:#c0392b;border-color:#e8c0c0;" onclick="eliminarCurso('${c.id}', '${c.titulo.replace(/'/g,'')}')">Eliminar</button>`;
     return `<tr ${bg}>
@@ -1330,6 +1459,41 @@ async function eliminarCurso(id, titulo) {
   const { error } = await sb.from('capacitaciones').delete().eq('id', id);
   if (error) { toast('Error al eliminar: ' + error.message); return; }
   toast('Capacitación eliminada definitivamente.');
+  cargarCursos();
+  cargarCursosFiltro();
+  cargarPlanCursos();
+}
+
+async function editarCurso(id) {
+  const { data } = await sb.from('capacitaciones').select('*').eq('id', id).single();
+  if (!data) { toast('No se encontró el curso.'); return; }
+  document.getElementById('edit-curso-id').value = data.id;
+  document.getElementById('edit-curso-titulo').value = data.titulo || '';
+  document.getElementById('edit-curso-tipo').value = data.tipo || 'BPM';
+  document.getElementById('edit-curso-responsable').value = data.responsable || '';
+  document.getElementById('edit-curso-horas').value = data.duracion_horas || '';
+  document.getElementById('edit-curso-temario').value = data.temario || '';
+  document.getElementById('modal-curso').classList.add('open');
+}
+
+function cerrarModalCurso() {
+  document.getElementById('modal-curso').classList.remove('open');
+}
+
+async function guardarCurso() {
+  const id = document.getElementById('edit-curso-id').value;
+  const titulo = document.getElementById('edit-curso-titulo').value.trim();
+  if (!titulo) { toast('Completá el título.'); return; }
+  const { error } = await sb.from('capacitaciones').update({
+    titulo,
+    tipo: document.getElementById('edit-curso-tipo').value,
+    responsable: document.getElementById('edit-curso-responsable').value.trim(),
+    duracion_horas: parseFloat(document.getElementById('edit-curso-horas').value) || null,
+    temario: document.getElementById('edit-curso-temario').value.trim()
+  }).eq('id', id);
+  if (error) { toast('Error al guardar.'); return; }
+  cerrarModalCurso();
+  toast('Capacitación actualizada.');
   cargarCursos();
   cargarCursosFiltro();
   cargarPlanCursos();
