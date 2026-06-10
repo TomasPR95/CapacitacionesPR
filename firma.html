@@ -333,6 +333,29 @@ body {
   </div>
 </div>
 
+<!-- ══ PANTALLA: CONVOCADOS ══ -->
+<div id="p-convocados" class="container pb" style="display:none;">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+    <button class="btn btn-outline" style="width:auto;padding:8px 14px;" onclick="mostrar('p-buscar')">← Volver a firmar</button>
+    <h2 style="font-size:17px;font-weight:700;">Convocados</h2>
+  </div>
+
+  <div class="card" style="margin-bottom:14px;">
+    <p style="font-size:13px;color:#666;margin-bottom:10px;">
+      Marcá quiénes debían asistir. Los que no firmen quedarán como ausentes.
+    </p>
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Convocar sectores completos:</div>
+    <div id="sectores-chips" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+  </div>
+
+  <div class="search-box">
+    <span>🔍</span>
+    <input type="text" id="inp-buscar-conv" placeholder="Buscar persona para convocar..."
+           oninput="filtrarConvocados()" autocomplete="off">
+  </div>
+  <div class="emp-list" id="lista-conv"></div>
+</div>
+
 <!-- ══ PANTALLA: CERRADA ══ -->
 <div id="p-cerrada" style="display:none;">
   <div class="icon">✅</div>
@@ -344,9 +367,12 @@ body {
 <!-- FOOTER BAR (visible en modo firma) -->
 <div class="footer-bar" id="footer-bar" style="display:none;">
   <div class="count">
-    <strong id="f-firmaron">0</strong> firmaron &nbsp;·&nbsp; <strong id="f-pendientes">0</strong> pendientes
+    <strong id="f-firmaron">0</strong> firmaron &nbsp;·&nbsp; <strong id="f-convocados">0</strong> convocados
   </div>
-  <button class="btn-cerrar" onclick="abrirModalCierre()">🔒 Cerrar sesión</button>
+  <div style="display:flex;gap:8px;">
+    <button class="btn-cerrar" onclick="abrirConvocados()">👥 Convocados</button>
+    <button class="btn-cerrar" onclick="abrirModalCierre()">🔒 Cerrar sesión</button>
+  </div>
 </div>
 
 <!-- MODAL: CIERRE DE SESIÓN -->
@@ -394,6 +420,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let sesion = null;
 let empleados = [];
 let firmados = new Set();
+let convocados = new Set();
 let empSeleccionado = null;
 let pad = null;
 let padInst = null;
@@ -416,13 +443,13 @@ async function cargarCaps() {
 }
 
 function mostrar(id) {
-  ['p-inicio','p-abrir','p-buscar','p-firmar','p-cerrada','p-autoagregar'].forEach(p => {
+  ['p-inicio','p-abrir','p-buscar','p-firmar','p-cerrada','p-autoagregar','p-convocados'].forEach(p => {
     const el = document.getElementById(p);
     if (el) el.style.display = 'none';
   });
   document.getElementById(id).style.display = ['p-cerrada'].includes(id) ? 'block' : 'block';
 
-  const enSesion = ['p-buscar','p-firmar','p-autoagregar'].includes(id);
+  const enSesion = ['p-buscar','p-firmar','p-autoagregar','p-convocados'].includes(id);
   document.getElementById('app-header').style.display = enSesion ? 'flex' : 'none';
   document.getElementById('footer-bar').style.display = ['p-buscar','p-firmar'].includes(id) ? 'flex' : 'none';
 
@@ -460,6 +487,7 @@ async function abrirSesion() {
   const { data: emps } = await sb.from('empleados').select('*').eq('activo', true).order('nombre');
   empleados = (emps || []).filter(e => !e.centro || e.centro === centro);
   firmados = new Set();
+  convocados = new Set();
   actualizarContador();
 
   btn.disabled = false; btn.textContent = 'Abrir sesión y empezar';
@@ -600,6 +628,13 @@ async function confirmar() {
   if (error) { toast('Error al guardar la firma.'); btn.disabled = false; btn.textContent = 'Confirmar firma ✓'; return; }
 
   firmados.add(empSeleccionado.id);
+
+  // Quien firma queda automáticamente como convocado (asistió, luego estaba convocado)
+  if (!convocados.has(empSeleccionado.id)) {
+    await sb.from('convocados').upsert({ sesion_id: sesion.id, empleado_id: empSeleccionado.id }, { onConflict: 'sesion_id,empleado_id' });
+    convocados.add(empSeleccionado.id);
+  }
+
   actualizarContador();
   flash();
   volver();
@@ -608,10 +643,96 @@ async function confirmar() {
 
 function actualizarContador() {
   const f = firmados.size;
-  const p = Math.max(0, empleados.length - f);
-  document.getElementById('h-counter').textContent = f + ' firmaron · ' + p + ' pendientes';
+  const c = convocados.size;
+  document.getElementById('h-counter').textContent = f + ' firmaron · ' + c + ' convocados';
   document.getElementById('f-firmaron').textContent = f;
-  document.getElementById('f-pendientes').textContent = p;
+  document.getElementById('f-convocados').textContent = c;
+}
+
+// ── CONVOCADOS ──
+function abrirConvocados() {
+  renderSectoresChips();
+  document.getElementById('inp-buscar-conv').value = '';
+  renderListaConvocados('');
+  mostrar('p-convocados');
+}
+
+function renderSectoresChips() {
+  const sectores = [...new Set(empleados.map(e => e.sector).filter(Boolean))].sort();
+  const cont = document.getElementById('sectores-chips');
+  cont.innerHTML = sectores.map(s => {
+    const delSector = empleados.filter(e => e.sector === s);
+    const todosConvocados = delSector.length > 0 && delSector.every(e => convocados.has(e.id));
+    return `<button class="btn ${todosConvocados ? 'btn-success' : 'btn-outline'}" style="width:auto;padding:6px 12px;font-size:13px;"
+      onclick="toggleSector('${s.replace(/'/g,"\\'")}')">${todosConvocados ? '✓ ' : ''}${s} (${delSector.length})</button>`;
+  }).join('');
+}
+
+async function toggleSector(sector) {
+  const delSector = empleados.filter(e => e.sector === sector);
+  const todosConvocados = delSector.length > 0 && delSector.every(e => convocados.has(e.id));
+
+  if (todosConvocados) {
+    // Quitar todos (excepto los que ya firmaron, esos no se pueden quitar)
+    for (const e of delSector) {
+      if (!firmados.has(e.id)) {
+        await sb.from('convocados').delete().eq('sesion_id', sesion.id).eq('empleado_id', e.id);
+        convocados.delete(e.id);
+      }
+    }
+    toast('Sector quitado de convocados.');
+  } else {
+    // Agregar todos
+    const nuevos = delSector.filter(e => !convocados.has(e.id)).map(e => ({ sesion_id: sesion.id, empleado_id: e.id }));
+    if (nuevos.length) {
+      await sb.from('convocados').upsert(nuevos, { onConflict: 'sesion_id,empleado_id' });
+      nuevos.forEach(n => convocados.add(n.empleado_id));
+    }
+    toast('Sector convocado completo.');
+  }
+  renderSectoresChips();
+  renderListaConvocados(document.getElementById('inp-buscar-conv').value.trim());
+  actualizarContador();
+}
+
+function filtrarConvocados() {
+  renderListaConvocados(document.getElementById('inp-buscar-conv').value.trim());
+}
+
+function renderListaConvocados(q) {
+  const lista = document.getElementById('lista-conv');
+  let arr = empleados;
+  if (q) {
+    const ql = q.toLowerCase();
+    arr = empleados.filter(e => e.nombre.toLowerCase().includes(ql) || e.legajo.includes(ql));
+  }
+  if (!arr.length) { lista.innerHTML = '<div class="empty-list">Sin resultados</div>'; return; }
+  lista.innerHTML = arr.map(e => {
+    const conv = convocados.has(e.id);
+    const firmo = firmados.has(e.id);
+    return `<div class="emp-item" onclick="toggleConvocado('${e.id}')" style="${conv ? 'border-color:#1A6B3C;background:#E6F4EC;' : ''}">
+      <div class="emp-avatar">${iniciales(e.nombre)}</div>
+      <div style="flex:1">
+        <div class="emp-name">${e.nombre}</div>
+        <div class="emp-info">DNI ${e.legajo} · ${e.sector || '—'}${firmo ? ' · <span style="color:#1A6B3C;">ya firmó</span>' : ''}</div>
+      </div>
+      <div style="font-size:18px;color:${conv ? '#1A6B3C' : '#ccc'};">${conv ? '✓' : '○'}</div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleConvocado(id) {
+  if (convocados.has(id)) {
+    if (firmados.has(id)) { toast('No se puede quitar: ya firmó.'); return; }
+    await sb.from('convocados').delete().eq('sesion_id', sesion.id).eq('empleado_id', id);
+    convocados.delete(id);
+  } else {
+    await sb.from('convocados').upsert({ sesion_id: sesion.id, empleado_id: id }, { onConflict: 'sesion_id,empleado_id' });
+    convocados.add(id);
+  }
+  renderSectoresChips();
+  renderListaConvocados(document.getElementById('inp-buscar-conv').value.trim());
+  actualizarContador();
 }
 
 function abrirModalCierre() {
