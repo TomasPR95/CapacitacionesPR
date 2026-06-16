@@ -4,330 +4,200 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Registro de Capacitaciones</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --tanque: #12343B;
-  --tanque-osc: #0B2227;
-  --tanque-claro: #1A4A54;
-  --cobre: #C75B12;
-  --cobre-suave: #FBEEE3;
-  --fondo: #F1F4F3;
-  --superficie: #FFFFFF;
-  --tinta: #16282C;
-  --tinta-2: #5C6F72;
-  --linea: #E2E8E7;
-  --verde: #1F7A4D;
-  --verde-bg: #E3F2EA;
-  --rojo: #B3261E;
-  --sombra: 0 1px 2px rgba(18,52,59,.06), 0 4px 16px rgba(18,52,59,.04);
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: 'Inter', -apple-system, sans-serif;
-  background: var(--fondo);
-  color: var(--tinta);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f0f2f5;
   min-height: 100vh;
-  font-size: 15px;
-  -webkit-font-smoothing: antialiased;
+  color: #1a1a1a;
 }
 
-/* ── HEADER DE SESIÓN ── */
+/* ── HEADER ── */
 .header {
-  position: sticky; top: 0; z-index: 100;
-  background: linear-gradient(180deg, var(--tanque) 0%, var(--tanque-osc) 100%);
-  color: #fff;
+  background: #1B4F8A;
+  color: white;
   padding: 14px 20px;
-  display: flex; align-items: center; justify-content: space-between; gap: 14px;
-  border-bottom: 3px solid var(--cobre);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.header .h1 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 16px !important; font-weight: 600 !important;
-  letter-spacing: -0.01em;
-  background: none; border: none; padding: 0;
-  color: #fff;
-}
-.meta { font-size: 12.5px; color: rgba(255,255,255,.65); margin-top: 3px; }
-.header-right { display: flex; align-items: center; gap: 12px; }
-.counter {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 13px; font-weight: 600;
-  background: rgba(255,255,255,.1);
-  border: 1px solid rgba(255,255,255,.15);
-  padding: 7px 14px; border-radius: 99px;
-  white-space: nowrap;
-}
+.header h1 { font-size: 16px; font-weight: 600; }
+.header .meta { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+.header-right { text-align: right; }
+.counter { font-size: 13px; opacity: 0.9; }
 
-/* ── CONTENEDOR ── */
-.container { max-width: 680px; margin: 0 auto; padding: 22px 18px; }
-.container.pb { padding-bottom: 110px; }
+/* ── CONTAINER ── */
+.container { max-width: 600px; margin: 0 auto; padding: 20px; }
 
-/* ── PANTALLA INICIO ── */
-#p-inicio .card { text-align: center; padding: 44px 30px; }
-.logo {
-  width: 84px; height: 84px;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 20px;
-  font-size: 40px;
-  background: var(--cobre-suave);
-  border-radius: 24px;
-  border: 2px solid #F0D9C4;
-}
-#p-inicio h2 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 24px; font-weight: 700; letter-spacing: -0.02em;
-  color: var(--tanque);
-  margin-bottom: 26px;
-}
-
-/* ── CARDS ── */
+/* ── CARD ── */
 .card {
-  background: var(--superficie);
-  border: 1px solid var(--linea);
-  border-radius: 18px;
-  padding: 22px;
-  box-shadow: var(--sombra);
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
   margin-bottom: 16px;
-}
-.card h2 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 18px; font-weight: 600; color: var(--tanque);
-  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
-/* ── FORMULARIOS ── */
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-.form-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
-.form-row .form-group { margin-bottom: 0; }
-.form-group label {
-  font-size: 11.5px; font-weight: 700; letter-spacing: 0.07em;
-  text-transform: uppercase; color: var(--tinta-2);
-}
-input, select, textarea {
-  font-family: 'Inter', sans-serif;
-  font-size: 16px; color: var(--tinta);
-  background: var(--superficie);
-  border: 1.5px solid var(--linea);
-  border-radius: 12px;
-  padding: 13px 14px;
-  width: 100%;
-  transition: border-color .15s, box-shadow .15s;
-}
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--cobre);
-  box-shadow: 0 0 0 3px rgba(199,91,18,.13);
-}
+/* ── PANTALLA: INICIO ── */
+#p-inicio { text-align: center; }
+#p-inicio .logo { font-size: 48px; margin-bottom: 16px; }
+#p-inicio h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+#p-inicio p { color: #666; font-size: 14px; margin-bottom: 24px; }
 
-/* ── BOTONES (táctiles, grandes) ── */
-.btn {
-  font-family: 'Inter', sans-serif;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%;
-  min-height: 54px;
-  font-size: 16px; font-weight: 600;
-  border: none; border-radius: 14px;
-  padding: 14px 20px;
-  cursor: pointer;
-  transition: all .15s;
+/* ── PANTALLA: ABRIR SESION ── */
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 13px; color: #555; font-weight: 500; margin-bottom: 5px; }
+.form-group select,
+.form-group input {
+  width: 100%; padding: 10px 12px;
+  border: 1px solid #ddd; border-radius: 7px;
+  font-size: 14px; color: #1a1a1a; background: white;
+  appearance: none;
 }
-.btn:active { transform: scale(.97); }
-.btn:disabled { opacity: .45; cursor: not-allowed; }
-.btn-primary { background: var(--tanque); color: #fff; }
-.btn-primary:hover { background: var(--tanque-claro); }
-.btn-success { background: var(--verde); color: #fff; }
-.btn-outline {
-  background: var(--superficie); color: var(--tinta);
-  border: 1.5px solid var(--linea);
-}
-.btn-outline:active { border-color: var(--cobre); color: var(--cobre); }
-.btn-danger-outline {
-  background: var(--superficie); color: var(--rojo);
-  border: 1.5px solid #E8C4C1;
-}
-.btn-row { display: grid; grid-template-columns: 1fr 1.6fr; gap: 12px; margin-top: 16px; }
-.btn-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.form-group select:focus,
+.form-group input:focus { outline: none; border-color: #1B4F8A; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-/* ── BÚSQUEDA ── */
+/* ── PANTALLA: BUSCAR ── */
 .search-box {
-  display: flex; align-items: center; gap: 10px;
-  background: var(--superficie);
-  border: 1.5px solid var(--linea);
-  border-radius: 14px;
-  padding: 4px 16px;
-  margin-bottom: 14px;
-  box-shadow: var(--sombra);
+  display: flex; align-items: center;
+  background: #f5f5f5; border-radius: 8px;
+  padding: 10px 14px; margin-bottom: 14px;
+  border: 1px solid #e5e5e5;
 }
-.search-box span { font-size: 17px; opacity: .55; }
-.search-box input { border: none; box-shadow: none !important; padding: 13px 0; font-size: 16px; }
+.search-box input {
+  border: none; background: transparent;
+  font-size: 15px; flex: 1; outline: none;
+}
+.search-box span { color: #999; margin-right: 8px; }
 
-/* ── LISTA DE EMPLEADOS ── */
-.emp-list { display: flex; flex-direction: column; gap: 9px; }
+.emp-list { display: flex; flex-direction: column; gap: 8px; max-height: 55vh; overflow-y: auto; }
 .emp-item {
-  display: flex; align-items: center; gap: 14px;
-  background: var(--superficie);
-  border: 1.5px solid var(--linea);
-  border-radius: 16px;
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: all .14s;
-  box-shadow: var(--sombra);
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border: 1px solid #e8e8e8;
+  border-radius: 8px; cursor: pointer; background: white;
+  transition: all 0.12s;
 }
-.emp-item:active { transform: scale(.985); border-color: var(--cobre); }
-.emp-item.signed { background: var(--verde-bg); border-color: #C4E3D2; }
+.emp-item:hover { border-color: #1B4F8A; background: #f0f5ff; }
+.emp-item.signed { opacity: 0.45; pointer-events: none; }
 .emp-avatar {
-  width: 46px; height: 46px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 15px; font-weight: 700;
-  color: var(--tanque);
-  background: var(--petrol-bg, #E1EDEF);
-  border-radius: 13px;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: #E8EEF7; color: #1B4F8A;
+  font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.emp-item.signed .emp-avatar { background: #CDE9DA; color: var(--verde); }
-.emp-name { font-size: 16px; font-weight: 600; color: var(--tinta); }
-.emp-info { font-size: 12.5px; color: var(--tinta-2); margin-top: 2px; }
-.emp-check { margin-left: auto; color: var(--verde); font-size: 20px; font-weight: 700; }
-.empty-list { text-align: center; padding: 36px; color: #9CA9AB; font-size: 14px; }
+.emp-name { font-size: 14px; font-weight: 600; }
+.emp-info { font-size: 12px; color: #888; margin-top: 1px; }
+.emp-check { margin-left: auto; color: #1A6B3C; font-size: 18px; }
+.empty-list { text-align: center; padding: 30px; color: #aaa; font-size: 14px; }
 
-/* ── PERSONA SELECCIONADA ── */
+/* ── PANTALLA: FIRMAR ── */
 .selected-person {
-  display: flex; align-items: center; gap: 16px;
-  background: var(--superficie);
-  border: 1.5px solid var(--linea);
-  border-left: 4px solid var(--cobre);
-  border-radius: 16px;
-  padding: 16px 18px;
-  margin-bottom: 14px;
-  box-shadow: var(--sombra);
+  display: flex; align-items: center; gap: 12px;
+  background: #f0f5ff; border-radius: 8px;
+  padding: 12px 14px; margin-bottom: 16px;
+  border: 1px solid #C5D5E8;
 }
 .selected-avatar {
-  width: 54px; height: 54px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 17px; font-weight: 700;
-  color: #fff;
-  background: var(--tanque);
-  border-radius: 15px;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: #1B4F8A; color: white;
+  font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 
-/* ── FIRMA ── */
-.sig-label {
-  font-size: 11.5px; font-weight: 700; letter-spacing: 0.07em;
-  text-transform: uppercase; color: var(--tinta-2);
-  margin-bottom: 9px;
-}
+.sig-label { font-size: 13px; color: #555; font-weight: 500; margin-bottom: 6px; }
 .sig-container {
-  position: relative;
-  border: 2px dashed #D9A678;
-  border-radius: 16px;
-  background: #FFFDFB;
-  overflow: hidden;
+  border: 1.5px dashed #ccc; border-radius: 8px;
+  background: #fafafa; position: relative;
+  margin-bottom: 8px; overflow: hidden;
 }
-.sig-container canvas { display: block; width: 100%; touch-action: none; }
+#sigCanvas { display: block; width: 100%; height: 170px; touch-action: none; }
 .sig-hint {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-  color: #C9B49E; font-size: 15px; pointer-events: none;
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 13px; color: #ccc; pointer-events: none;
 }
 .sig-timestamp {
-  position: absolute; bottom: 8px; right: 12px;
-  font-size: 11px; color: var(--tinta-2); pointer-events: none;
+  position: absolute; bottom: 6px; right: 10px;
+  font-size: 11px; color: #bbb;
 }
 
-/* ── FOOTER ── */
-.footer-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(255,255,255,.94);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid var(--linea);
-  padding: 13px 18px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-}
-.count { font-size: 13.5px; color: var(--tinta-2); }
-.count strong {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 16px; color: var(--tanque);
-}
-.btn-cerrar {
-  font-family: 'Inter', sans-serif;
-  background: var(--tanque); color: #fff;
-  border: none; border-radius: 12px;
+/* ── BOTONES ── */
+.btn {
+  padding: 11px 20px; border-radius: 8px;
   font-size: 14px; font-weight: 600;
-  padding: 12px 18px;
-  cursor: pointer;
-  transition: all .15s;
-  white-space: nowrap;
+  cursor: pointer; border: none;
+  transition: all 0.15s; width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
 }
-.btn-cerrar:active { transform: scale(.97); }
-
-/* ── PANTALLA CERRADA ── */
-#p-cerrada { text-align: center; padding: 90px 24px 40px; }
-#p-cerrada .icon { font-size: 60px; margin-bottom: 18px; }
-#p-cerrada h2 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 26px; font-weight: 700; color: var(--tanque);
-  margin-bottom: 10px;
-}
-#p-cerrada p { color: var(--tinta-2); margin-bottom: 28px; font-size: 15px; }
+.btn-primary { background: #1B4F8A; color: white; }
+.btn-primary:hover { background: #163F72; }
+.btn-primary:disabled { background: #a0b4cc; cursor: default; }
+.btn-success { background: #1A6B3C; color: white; }
+.btn-success:hover { background: #155531; }
+.btn-success:disabled { background: #aaa; cursor: default; }
+.btn-outline { background: white; color: #333; border: 1.5px solid #ddd; }
+.btn-outline:hover { background: #f5f5f5; }
+.btn-danger-outline { background: white; color: #c0392b; border: 1.5px solid #c0392b; }
+.btn-row { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: 12px; }
+.btn-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
 
 /* ── MODAL ── */
 .overlay {
   display: none; position: fixed; inset: 0;
-  background: rgba(11,34,39,.55);
-  backdrop-filter: blur(4px);
-  z-index: 500;
+  background: rgba(0,0,0,0.5); z-index: 100;
   align-items: center; justify-content: center; padding: 20px;
 }
 .overlay.open { display: flex; }
 .modal {
-  background: var(--superficie); border-radius: 18px;
-  padding: 26px; width: 100%; max-width: 460px;
+  background: white; border-radius: 12px;
+  padding: 24px; width: 100%; max-width: 360px;
   max-height: 90vh; overflow-y: auto;
-  box-shadow: 0 24px 64px rgba(11,34,39,.35);
-  animation: modalIn .2s ease;
 }
-@keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
-.modal h3 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 18px; font-weight: 600; color: var(--tanque);
-  margin-bottom: 16px;
-}
+.modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.modal p { font-size: 13px; color: #666; margin-bottom: 16px; }
 
-/* ── FLASH Y TOAST ── */
-.flash {
-  position: fixed; top: 76px; left: 50%; transform: translateX(-50%) translateY(-8px);
-  background: var(--verde); color: #fff;
-  padding: 13px 26px; border-radius: 14px;
-  font-size: 15px; font-weight: 600;
-  box-shadow: 0 8px 24px rgba(31,122,77,.35);
-  opacity: 0; transition: all .3s; z-index: 600;
-  pointer-events: none;
-}
-.flash.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* ── CERRADA ── */
+#p-cerrada { text-align: center; padding: 40px 20px; }
+#p-cerrada .icon { font-size: 56px; margin-bottom: 16px; }
+#p-cerrada h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+#p-cerrada p { color: #666; font-size: 14px; margin-bottom: 24px; }
+
+/* ── TOAST ── */
 .toast {
-  position: fixed; bottom: 96px; left: 50%; transform: translateX(-50%) translateY(8px);
-  background: var(--tanque); color: #fff;
-  padding: 12px 22px; border-radius: 12px;
-  font-size: 13.5px; font-weight: 500;
-  box-shadow: 0 8px 24px rgba(11,34,39,.35);
-  opacity: 0; transition: all .25s; z-index: 999;
-  border-left: 3px solid var(--cobre);
-  max-width: 88vw; text-align: center;
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: #333; color: white; padding: 10px 20px;
+  border-radius: 8px; font-size: 13px;
+  opacity: 0; transition: opacity 0.25s; z-index: 200;
+  white-space: nowrap;
 }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* ── CHIPS DE SECTORES (convocados) ── */
-#sectores-chips .btn { width: auto; min-height: 42px; font-size: 14px; border-radius: 99px; }
-
-@media (max-width: 480px) {
-  .form-row { grid-template-columns: 1fr; }
-  .container { padding: 16px 14px; }
+.toast.show { opacity: 1; }
+.flash {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  background: #1A6B3C; color: white; padding: 10px 24px;
+  border-radius: 99px; font-size: 14px; font-weight: 600;
+  opacity: 0; transition: opacity 0.25s; z-index: 200;
 }
+.flash.show { opacity: 1; }
 
+/* ── FOOTER BAR ── */
+.footer-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: white; border-top: 1px solid #e5e5e5;
+  padding: 10px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.footer-bar .count { font-size: 13px; color: #666; }
+.footer-bar .count strong { color: #1a1a1a; }
+.btn-cerrar {
+  padding: 7px 16px; font-size: 13px; font-weight: 600;
+  background: white; color: #888; border: 1.5px solid #ddd;
+  border-radius: 7px; cursor: pointer;
+}
+.btn-cerrar:hover { color: #c0392b; border-color: #c0392b; }
+
+.pb { padding-bottom: 60px; }
 </style>
 </head>
 <body>
@@ -367,7 +237,7 @@ input:focus, select:focus, textarea:focus {
     </div>
     <div class="form-group">
       <label>Centro productivo *</label>
-      <select id="inp-centro" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:white;">
+      <select id="inp-centro">
         <option value="">Seleccioná el centro...</option>
         <option>Bella Vista</option>
         <option>San Rafael</option>
@@ -400,7 +270,6 @@ input:focus, select:focus, textarea:focus {
            oninput="filtrar()" autocomplete="off">
   </div>
   <div class="emp-list" id="lista-emp"></div>
-
   <button class="btn btn-outline" style="margin-top:14px;" onclick="abrirAutoAgregar()">
     No estoy en la lista
   </button>
@@ -416,19 +285,17 @@ input:focus, select:focus, textarea:focus {
     <p style="font-size:13px;color:#666;margin-bottom:16px;">
       Completá tus datos para firmar. RRHH va a validar la información después.
     </p>
-    <div class="form-group" style="margin-bottom:14px;">
-      <label style="font-size:13px;color:#555;font-weight:500;display:block;margin-bottom:5px;">DNI *</label>
-      <input type="text" id="aa-dni" placeholder="Sin puntos" inputmode="numeric"
-             style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;">
+    <div class="form-group">
+      <label>DNI *</label>
+      <input type="text" id="aa-dni" placeholder="Sin puntos" inputmode="numeric">
     </div>
-    <div class="form-group" style="margin-bottom:14px;">
-      <label style="font-size:13px;color:#555;font-weight:500;display:block;margin-bottom:5px;">Nombre y apellido *</label>
-      <input type="text" id="aa-nombre" placeholder="Tu nombre completo"
-             style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;">
+    <div class="form-group">
+      <label>Nombre y apellido *</label>
+      <input type="text" id="aa-nombre" placeholder="Tu nombre completo">
     </div>
-    <div class="form-group" style="margin-bottom:16px;">
-      <label style="font-size:13px;color:#555;font-weight:500;display:block;margin-bottom:5px;">Sector *</label>
-      <select id="aa-sector" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:white;">
+    <div class="form-group">
+      <label>Sector *</label>
+      <select id="aa-sector">
         <option value="">Seleccioná tu sector...</option>
         <option>Envasado</option><option>Producción</option><option>Calidad</option>
         <option>Logística</option><option>Mantenimiento</option><option>Otro</option>
@@ -448,7 +315,6 @@ input:focus, select:focus, textarea:focus {
     </div>
     <button class="btn btn-outline" style="width:auto;padding:7px 12px;font-size:13px;" onclick="volver()">Cambiar</button>
   </div>
-
   <div class="card">
     <div class="sig-label">Firma</div>
     <div class="sig-container">
@@ -469,7 +335,6 @@ input:focus, select:focus, textarea:focus {
     <button class="btn btn-outline" style="width:auto;padding:8px 14px;" onclick="mostrar('p-buscar')">← Volver a firmar</button>
     <h2 style="font-size:17px;font-weight:700;">Convocados</h2>
   </div>
-
   <div class="card" style="margin-bottom:14px;">
     <p style="font-size:13px;color:#666;margin-bottom:10px;">
       Marcá quiénes debían asistir. Los que no firmen quedarán como ausentes.
@@ -477,7 +342,6 @@ input:focus, select:focus, textarea:focus {
     <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Convocar sectores completos:</div>
     <div id="sectores-chips" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
   </div>
-
   <div class="search-box">
     <span>🔍</span>
     <input type="text" id="inp-buscar-conv" placeholder="Buscar persona para convocar..."
@@ -494,7 +358,7 @@ input:focus, select:focus, textarea:focus {
   <button class="btn btn-primary" style="max-width:280px;margin:0 auto;" onclick="mostrar('p-inicio')">Volver al inicio</button>
 </div>
 
-<!-- FOOTER BAR (visible en modo firma) -->
+<!-- FOOTER BAR -->
 <div class="footer-bar" id="footer-bar" style="display:none;">
   <div class="count">
     <strong id="f-firmaron">0</strong> firmaron &nbsp;·&nbsp; <strong id="f-convocados">0</strong> convocados
@@ -510,6 +374,8 @@ input:focus, select:focus, textarea:focus {
   <div class="modal">
     <h3>Cerrar sesión</h3>
     <p>Ingresá el PIN para cerrar. Una vez cerrada no se pueden agregar firmas.</p>
+
+    <!-- Paso 1: PIN -->
     <div id="cierre-p1">
       <div class="form-group">
         <label>PIN</label>
@@ -520,9 +386,11 @@ input:focus, select:focus, textarea:focus {
         <button class="btn btn-danger-outline" onclick="validarPin()">Continuar</button>
       </div>
     </div>
+
+    <!-- Paso 2: Verificación de eficacia -->
     <div id="cierre-verif" style="display:none;">
       <div class="form-group">
-        <label>Verificación de eficacia</label>
+        <label>Verificación de eficacia *</label>
         <select id="sel-verif">
           <option value="">Seleccioná cómo se verificará...</option>
           <option>Evaluación escrita</option>
@@ -532,16 +400,20 @@ input:focus, select:focus, textarea:focus {
           <option>Seguimiento de indicadores</option>
         </select>
       </div>
-      <button type="button" id="btn-verif-otro" class="btn btn-outline" style="min-height:42px;font-size:13.5px;margin-bottom:12px;" onclick="toggleVerifOtro()">+ Especificar otra forma</button>
+      <button type="button" id="btn-verif-otro"
+              style="background:white;color:#555;border:1.5px solid #ddd;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;width:100%;margin-bottom:12px;"
+              onclick="toggleVerifOtro()">+ Especificar otra forma</button>
       <div class="form-group" id="grupo-verif-otro" style="display:none;">
         <label>Otra forma / detalle</label>
         <input type="text" id="inp-verif-otro" placeholder="Describí cómo se verificará la eficacia">
       </div>
       <div class="btn-row-2">
         <button class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="confirmarVerif()">Continuar</button>
+        <button class="btn btn-primary" onclick="confirmarVerif()">Continuar →</button>
       </div>
     </div>
+
+    <!-- Paso 3: Firma del instructor -->
     <div id="cierre-p2" style="display:none;">
       <p style="margin-bottom:8px;">Firma del instructor</p>
       <div class="sig-container" style="margin-bottom:12px;">
@@ -576,6 +448,7 @@ let convocados = new Set();
 let empSeleccionado = null;
 let pad = null;
 let padInst = null;
+let verificacionEficacia = '';
 
 window.addEventListener('load', () => {
   document.getElementById('inp-fecha').valueAsDate = new Date();
@@ -599,7 +472,7 @@ function mostrar(id) {
     const el = document.getElementById(p);
     if (el) el.style.display = 'none';
   });
-  document.getElementById(id).style.display = ['p-cerrada'].includes(id) ? 'block' : 'block';
+  document.getElementById(id).style.display = 'block';
 
   const enSesion = ['p-buscar','p-firmar','p-autoagregar','p-convocados'].includes(id);
   document.getElementById('app-header').style.display = enSesion ? 'flex' : 'none';
@@ -631,11 +504,9 @@ async function abrirSesion() {
   if (error) { toast('Error al crear la sesión.'); btn.disabled = false; btn.textContent = 'Abrir sesión y empezar'; return; }
 
   sesion = data;
-
   document.getElementById('h-titulo').textContent = data.capacitaciones.titulo;
   document.getElementById('h-meta').textContent = formatFecha(fecha) + ' · ' + centro + ' · ' + (lugar || 'Sin lugar') + ' · ' + inst;
 
-  // Empleados del centro (más los que no tienen centro asignado, por si acaso)
   const { data: emps } = await sb.from('empleados').select('*').eq('activo', true).order('nombre');
   empleados = (emps || []).filter(e => !e.centro || e.centro === centro);
   firmados = new Set();
@@ -659,9 +530,7 @@ function iniciarPad() {
   });
 }
 
-function filtrar() {
-  renderLista(document.getElementById('inp-buscar').value.trim());
-}
+function filtrar() { renderLista(document.getElementById('inp-buscar').value.trim()); }
 
 function renderLista(q) {
   const lista = document.getElementById('lista-emp');
@@ -670,17 +539,14 @@ function renderLista(q) {
     const ql = q.toLowerCase();
     arr = empleados.filter(e => e.nombre.toLowerCase().includes(ql) || e.legajo.includes(ql));
   }
-  if (!arr.length) {
-    lista.innerHTML = '<div class="empty-list">Sin resultados</div>';
-    return;
-  }
+  if (!arr.length) { lista.innerHTML = '<div class="empty-list">Sin resultados</div>'; return; }
   lista.innerHTML = arr.map(e => {
     const firmado = firmados.has(e.id);
     return `<div class="emp-item ${firmado ? 'signed' : ''}" onclick="${firmado ? '' : `seleccionar('${e.id}')`}">
       <div class="emp-avatar">${iniciales(e.nombre)}</div>
       <div style="flex:1">
         <div class="emp-name">${e.nombre}</div>
-        <div class="emp-info">DNI ${e.legajo} · ${e.sector || '—'}${e.auto_agregado ? ' · <span style="color:#92400E;">auto-agregado</span>' : ''}</div>
+        <div class="emp-info">DNI ${e.legajo} · ${e.sector || '—'}${e.auto_agregado ? ' · <span style="color:#92400E;">pendiente</span>' : ''}</div>
       </div>
       ${firmado ? '<div class="emp-check">✓</div>' : ''}
     </div>`;
@@ -698,19 +564,16 @@ async function confirmarAutoAgregar() {
   const dni = document.getElementById('aa-dni').value.trim();
   const nombre = document.getElementById('aa-nombre').value.trim();
   const sector = document.getElementById('aa-sector').value;
-
   if (!dni || !nombre || !sector) { toast('Completá todos los campos.'); return; }
 
   const btn = document.getElementById('btn-autoagregar');
   btn.disabled = true; btn.textContent = 'Agregando...';
 
-  // Verificar si ya existe (por DNI = legajo)
   const yaExiste = empleados.find(e => e.legajo === dni);
   if (yaExiste) {
     btn.disabled = false; btn.textContent = 'Agregarme y firmar';
     toast('Ese DNI ya está en la lista. Buscalo arriba.');
-    mostrar('p-buscar');
-    return;
+    mostrar('p-buscar'); return;
   }
 
   const { data, error } = await sb.from('empleados')
@@ -733,11 +596,9 @@ async function confirmarAutoAgregar() {
 function seleccionar(id) {
   empSeleccionado = empleados.find(e => e.id === id);
   if (!empSeleccionado) return;
-
   document.getElementById('sel-avatar').textContent = iniciales(empSeleccionado.nombre);
   document.getElementById('sel-nombre').textContent = empSeleccionado.nombre;
   document.getElementById('sel-info').textContent = 'DNI ' + empSeleccionado.legajo + ' · ' + (empSeleccionado.sector || '—');
-
   mostrar('p-firmar');
   setTimeout(() => {
     iniciarPad();
@@ -747,10 +608,7 @@ function seleccionar(id) {
   }, 50);
 }
 
-function volver() {
-  empSeleccionado = null;
-  mostrar('p-buscar');
-}
+function volver() { empSeleccionado = null; mostrar('p-buscar'); }
 
 function limpiar() {
   if (pad) pad.clear();
@@ -771,22 +629,14 @@ async function confirmar() {
   const { error: upErr } = await sb.storage.from('firmas').upload(path, blob, { contentType: 'image/png' });
   const firma_url = upErr ? imgData : path;
 
-  const { error } = await sb.from('asistencias').insert({
-    sesion_id: sesion.id,
-    empleado_id: empSeleccionado.id,
-    firma_url
-  });
-
+  const { error } = await sb.from('asistencias').insert({ sesion_id: sesion.id, empleado_id: empSeleccionado.id, firma_url });
   if (error) { toast('Error al guardar la firma.'); btn.disabled = false; btn.textContent = 'Confirmar firma ✓'; return; }
 
   firmados.add(empSeleccionado.id);
-
-  // Quien firma queda automáticamente como convocado (asistió, luego estaba convocado)
   if (!convocados.has(empSeleccionado.id)) {
     await sb.from('convocados').upsert({ sesion_id: sesion.id, empleado_id: empSeleccionado.id }, { onConflict: 'sesion_id,empleado_id' });
     convocados.add(empSeleccionado.id);
   }
-
   actualizarContador();
   flash();
   volver();
@@ -823,9 +673,7 @@ function renderSectoresChips() {
 async function toggleSector(sector) {
   const delSector = empleados.filter(e => e.sector === sector);
   const todosConvocados = delSector.length > 0 && delSector.every(e => convocados.has(e.id));
-
   if (todosConvocados) {
-    // Quitar todos (excepto los que ya firmaron, esos no se pueden quitar)
     for (const e of delSector) {
       if (!firmados.has(e.id)) {
         await sb.from('convocados').delete().eq('sesion_id', sesion.id).eq('empleado_id', e.id);
@@ -834,7 +682,6 @@ async function toggleSector(sector) {
     }
     toast('Sector quitado de convocados.');
   } else {
-    // Agregar todos
     const nuevos = delSector.filter(e => !convocados.has(e.id)).map(e => ({ sesion_id: sesion.id, empleado_id: e.id }));
     if (nuevos.length) {
       await sb.from('convocados').upsert(nuevos, { onConflict: 'sesion_id,empleado_id' });
@@ -847,9 +694,7 @@ async function toggleSector(sector) {
   actualizarContador();
 }
 
-function filtrarConvocados() {
-  renderListaConvocados(document.getElementById('inp-buscar-conv').value.trim());
-}
+function filtrarConvocados() { renderListaConvocados(document.getElementById('inp-buscar-conv').value.trim()); }
 
 function renderListaConvocados(q) {
   const lista = document.getElementById('lista-conv');
@@ -862,13 +707,13 @@ function renderListaConvocados(q) {
   lista.innerHTML = arr.map(e => {
     const conv = convocados.has(e.id);
     const firmo = firmados.has(e.id);
-    return `<div class="emp-item" onclick="toggleConvocado('${e.id}')" style="${conv ? 'border-color:#1F7A4D;background:#E6F4EC;' : ''}">
+    return `<div class="emp-item" onclick="toggleConvocado('${e.id}')" style="${conv ? 'border-color:#1A6B3C;background:#E6F4EC;' : ''}">
       <div class="emp-avatar">${iniciales(e.nombre)}</div>
       <div style="flex:1">
         <div class="emp-name">${e.nombre}</div>
-        <div class="emp-info">DNI ${e.legajo} · ${e.sector || '—'}${firmo ? ' · <span style="color:#1F7A4D;">ya firmó</span>' : ''}</div>
+        <div class="emp-info">DNI ${e.legajo} · ${e.sector || '—'}${firmo ? ' · <span style="color:#1A6B3C;">ya firmó</span>' : ''}</div>
       </div>
-      <div style="font-size:18px;color:${conv ? '#1F7A4D' : '#ccc'};">${conv ? '✓' : '○'}</div>
+      <div style="font-size:18px;color:${conv ? '#1A6B3C' : '#ccc'};">${conv ? '✓' : '○'}</div>
     </div>`;
   }).join('');
 }
@@ -887,29 +732,28 @@ async function toggleConvocado(id) {
   actualizarContador();
 }
 
+// ── CIERRE DE SESIÓN ──
 function abrirModalCierre() {
   document.getElementById('modal-cierre').classList.add('open');
   document.getElementById('cierre-p1').style.display = 'block';
   document.getElementById('cierre-verif').style.display = 'none';
   document.getElementById('cierre-p2').style.display = 'none';
   document.getElementById('inp-pin').value = '';
+  verificacionEficacia = '';
 }
 
 function cerrarModal() {
   document.getElementById('modal-cierre').classList.remove('open');
 }
 
-let verificacionEficacia = '';
-
 function validarPin() {
   if (document.getElementById('inp-pin').value !== PIN) { toast('PIN incorrecto.'); return; }
   document.getElementById('cierre-p1').style.display = 'none';
-  // Paso de verificación de eficacia
   document.getElementById('cierre-verif').style.display = 'block';
   document.getElementById('sel-verif').value = '';
   document.getElementById('inp-verif-otro').value = '';
   document.getElementById('grupo-verif-otro').style.display = 'none';
-  document.getElementById('btn-verif-otro').style.display = 'flex';
+  document.getElementById('btn-verif-otro').style.display = 'block';
 }
 
 function toggleVerifOtro() {
@@ -921,12 +765,8 @@ function toggleVerifOtro() {
 function confirmarVerif() {
   const sel = document.getElementById('sel-verif').value;
   const otro = document.getElementById('inp-verif-otro').value.trim();
-
   if (!sel && !otro) { toast('Indicá cómo se verificará la eficacia.'); return; }
-
-  // Componer el valor final: opción elegida, texto libre, o ambos
   verificacionEficacia = sel && otro ? sel + ' — ' + otro : (sel || otro);
-
   document.getElementById('cierre-verif').style.display = 'none';
   document.getElementById('cierre-p2').style.display = 'block';
   const canvas = document.getElementById('sigInstructor');
@@ -988,9 +828,15 @@ async function generarPDF(firmaInstructor) {
 
   const cap = sesion.capacitaciones;
   let y = 36;
-  [['Codigo', cap.codigo || '-'], ['Capacitacion', cap.titulo], ['Centro', sesion.centro || '-'], ['Fecha y lugar', formatFecha(sesion.fecha) + ' - ' + (sesion.lugar || '-')],
-   ['Instructor', sesion.instructor], ['Responsable', cap.responsable || '-'], ['Duracion', (cap.duracion_horas || '-') + ' hs'],
-   ['Verif. eficacia', verificacionEficacia || '-']
+  [
+    ['Codigo',       cap.codigo || '-'],
+    ['Capacitacion', cap.titulo],
+    ['Centro',       sesion.centro || '-'],
+    ['Fecha y lugar', formatFecha(sesion.fecha) + ' - ' + (sesion.lugar || '-')],
+    ['Instructor',   sesion.instructor],
+    ['Responsable',  cap.responsable || '-'],
+    ['Duracion',     (cap.duracion_horas || '-') + ' hs'],
+    ['Verif. eficacia', verificacionEficacia || '-']
   ].forEach(([k, v]) => {
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.text(k, m, y);
     doc.setFont('helvetica', 'normal');
